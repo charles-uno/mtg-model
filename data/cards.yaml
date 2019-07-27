@@ -1,0 +1,47 @@
+"Primeval Titan":
+    display: "Titan"
+    cost: 4GG
+    is_creature: true
+    is_green: true
+    is_colorless: false
+    is_land: false
+"Summoner's Pact":
+    display: "Pact"
+    cost: ""
+    is_creature: false
+    is_green: true
+    is_colorless: false
+    is_land: false
+Forest:
+    cost: null
+    is_creature: false
+    is_green: false
+    is_colorless: true
+    is_land: false
+    taps_for: G
+Explore:
+    cost: 1G
+    is_creature: false
+    is_green: true
+    is_colorless: false
+    is_land: false
+"Oath of Nissa":
+    display: "Oath"
+    cost: G
+    is_creature: false
+    is_land: false
+    is_colorless: false
+    is_green: true
+"Simic Growth Chamber":
+    display: Karoo
+    is_land: true
+    is_green: false
+    is_colorless: true
+    is_creature: false
+    taps_for: UG
+"Amulet of Vigor":
+    display: Amulet
+    is_land: false
+    is_green: false
+    is_colorless: true
+    is_creature: false
