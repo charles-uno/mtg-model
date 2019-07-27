@@ -12,10 +12,11 @@ class GameStateManager(object):
         initial_state.draw(8 if draw else 7)
         self.states = [initial_state]
 
-
     def next_turn(self):
         self.turn += 1
-        print("going to turn", self.turn)
+        print("Turn", self.turn)
+        if any( x.done for x in states ):
+            return
         old_states, new_states = self.states, []
         while old_states:
             print(len(old_states), "old states,", len(new_states), "new states")
@@ -26,6 +27,12 @@ class GameStateManager(object):
                     new_states.append(state)
         self.states = new_states
 
+    def done(self):
+        done_states = [ x for x in self.states if x.done ]
+        if done_states:
+            return done_states.pop()
+        else:
+            return None
 
     def peek(self):
         state = sorted( (len(x.lines), x) for x in self.states )[-1][-1]
