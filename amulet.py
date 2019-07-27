@@ -8,15 +8,15 @@ def main():
 
     manager = amulet.GameStateManager("decks/debug.in")
 
-    manager.next_turn()
-    manager.next_turn()
+    done_state = None
+    while done_state is None and manager.turn < 4:
+        done_state = manager.next_turn()
 
-    print(len(manager.states), "states")
-
-    for state in manager.states:
-        print("---------------")
-        state.report()
-
+    if done_state:
+        done_state.report()
+    else:
+        def key(x): return len(x.lines)
+        sorted(manager.states, key=key)[-1].report()
 
 
 # ----------------------------------------------------------------------

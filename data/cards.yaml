@@ -22,6 +22,11 @@ Forest:
     is_colorless: true
     is_land: true
     taps_for: G
+"Khalni Garden":
+    display: Garden
+    is_land: true
+    is_colorless: true
+    taps_for: G
 "Oath of Nissa":
     display: "Oath"
     cost: G

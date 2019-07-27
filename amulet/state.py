@@ -25,7 +25,8 @@ class GameState(object):
             pool=self.pool,
             turn=self.turn,
         )
-        clone.note(*notes)
+        if notes:
+            clone.note(*notes)
         return clone
 
     def __str__(self):
@@ -41,7 +42,7 @@ class GameState(object):
     # ------------------------------------------------------------------
 
     def clone_pass(self):
-        clone = self.clone("Pass the turn")
+        clone = self.clone("Turn", self.turn+1)
         clone.turn += 1
         if "Azusa, Lost but Seeking" in self.board:
             clone.drops = 3
@@ -53,6 +54,7 @@ class GameState(object):
         for card in clone.board:
             if io.is_land(card):
                 clone.pool += io.taps_for(card)
+        clone.lines[-1] += ", %d in pool" % clone.pool
         return [clone]
 
     # ------------------------------------------------------------------
@@ -83,7 +85,8 @@ class GameState(object):
         for card in set(self.board):
             if not io.is_land(card):
                 continue
-            c = self.clone("Bounce", io.display(card))
+            c = self.clone()
+            c.lines[-1] += ", bounce " + io.display(card)
             c.board.remove(card)
             c.hand.append(card)
             clones.append(c)
@@ -115,7 +118,7 @@ class GameState(object):
         return [self]
 
     def cast_explore(self):
-        self.lines[-1] += ", drawing %s" % io.display(self.deck[0])
+        self.lines[-1] += ", draw %s" % io.display(self.deck[0])
         self.draw(silent=True)
         self.drops += 1
         return [self]
@@ -162,6 +165,8 @@ class GameState(object):
         self.lines.append(" ".join( str(x) for x in args ))
 
     def report(self):
+        if self.lines[-1].startswith("Turn"):
+            self.lines.pop(-1)
         [ print(x) for x in self.lines ]
 
     # ------------------------------------------------------------------
