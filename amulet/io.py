@@ -1,32 +1,33 @@
 import random
 import yaml
 
+from . import mana
+
 # ----------------------------------------------------------------------
 
 with open("data/cards.yaml") as handle:
     CARDS = yaml.safe_load(handle)
 
 def is_colorless(card):
-    return CARDS[card]["is_colorless"]
+    return CARDS[card].get("is_colorless")
 
 def is_creature(card):
-    return CARDS[card]["is_creature"]
+    return CARDS[card].get("is_creature")
 
 def is_green(card):
-    return CARDS[card]["is_green"]
+    return CARDS[card].get("is_green")
 
 def is_land(card):
-    return CARDS[card]["is_land"]
+    return CARDS[card].get("is_land")
 
 def get_cost(card):
-    raw_cost = CARDS[card]["cost"]
-    if raw_cost is None:
-        return None
-    else:
-        cost = raw_cost.count("G")
-        if len(raw_cost) > cost:
-            cost += int(raw_cost.strip("G"))
-        return cost
+    return mana.Mana(CARDS[card].get("cost"))
+
+def taps_for(card):
+    return mana.Mana(CARDS[card].get("taps_for"))
+
+def enters_tapped(card):
+    return CARDS[card].get("enters_tapped")
 
 # ----------------------------------------------------------------------
 
@@ -36,7 +37,10 @@ def slug(card):
 def display(*cards):
     blurbs = []
     for card in sorted(set(cards)):
-        blurbs.append(str(cards.count(card)) + "*" + disp(card))
+        if cards.count(card) > 1:
+            blurbs.append(str(cards.count(card)) + "*" + disp(card))
+        else:
+            blurbs.append(disp(card))
     return " ".join(blurbs)
 
 def disp(card):

@@ -9,8 +9,14 @@ def main():
     manager = amulet.GameStateManager("decks/debug.in")
 
     manager.next_turn()
+    manager.next_turn()
 
-    manager.peek()
+    print(len(manager.states), "states")
+
+    for state in manager.states:
+        print("---------------")
+        state.report()
+
 
 
 # ----------------------------------------------------------------------
