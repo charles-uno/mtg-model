@@ -52,10 +52,7 @@ def display(*cards):
     return " ".join(blurbs)
 
 def disp(card):
-    try:
-        return CARDS[card]["display"]
-    except KeyError:
-        return rmchars(card, "-' ")
+    return rmchars(card, "-' ,")
 
 def rmchars(text, chars):
     for c in chars:

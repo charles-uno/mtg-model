@@ -9,13 +9,20 @@ def main():
 
     done_state = None
     while done_state is None and manager.turn < 4:
-        done_state = manager.next_turn()
+
+        try:
+            done_state = manager.next_turn()
+        except amulet.TooManyStates:
+            print("- too many states")
 
     if done_state:
         done_state.report()
+        print(done_state.summary())
+
     else:
         def key(x): return len(x.lines)
         sorted(manager.states, key=key)[-1].report()
+        print("- no solution")
 
 
 # ----------------------------------------------------------------------

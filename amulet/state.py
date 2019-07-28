@@ -17,6 +17,7 @@ class GameState(object):
         self.debt = kwargs.pop("debt", mana.Mana())
         self.deck = kwargs.pop("deck")
         self.done = kwargs.pop("done", False)
+        self.on_the_draw = kwargs.pop("on_the_draw")
         self.drops = kwargs.pop("drops", 1)
         self.hand = kwargs.pop("hand", [])
         self.lines = kwargs.pop("lines", [])
@@ -37,6 +38,7 @@ class GameState(object):
             drops=self.drops,
             hand=sorted(self.hand),
             lines=self.lines[:],
+            on_the_draw=self.on_the_draw,
             pool=self.pool,
             turn=self.turn,
         )
@@ -79,37 +81,24 @@ class GameState(object):
             clone.drops = 1
         clone.drops += clone.board.count("Sakura-Tribe Scout")
         clone.pool = mana.Mana()
-        # Tap everything at the first opportunity
+        # Tap everything at the first opportunity. This is not
+        # deterministic because some lands can tap for different colors.
         clones = clone.clone_tap_out()
-
         # Pay for any pacts. This is also non-deterministic
-        new_clones = []
-        for clone in clones:
-            clone.lines[-1] += ", pay " + str(clone.debt) + " for pact"
-            new_clones += clone.clone_pay(clone.debt)
-        clones = new_clones
-
+        if self.debt:
+            new_clones = []
+            for clone in clones:
+                clone.lines[-1] += ", pay " + str(clone.debt) + " for pact"
+                new_clones += clone.clone_pay(clone.debt)
+            clones = new_clones
         # Finish up the start of turn stuff
         for clone in clones:
             clone.debt = mana.Mana()
             clone.lines[-1] += ", draw " + io.display(self.deck[0])
             clone.draw(silent=True)
-
         return clones
 
     # ------------------------------------------------------------------
-
-    def clone_tap_out(self):
-        old_clones, new_clones = [self], []
-        for card in self.board:
-            if not io.is_land(card):
-                continue
-            for clone in old_clones:
-                new_clones += clone.clone_tap(card)
-            old_clones = []
-        for clone in new_clones:
-            clone.lines[-1] += ", " + str(clone.pool) + " in pool"
-        return new_clones
 
     def clone_play(self, card):
         self.test("playing", card)
@@ -129,15 +118,16 @@ class GameState(object):
         self.hand.remove(card)
         self.board.append(card)
         n_amulets = self.board.count("Amulet of Vigor")
-        old_clones, new_clones = [self.clone()], []
+        clones, new_clones = [self.clone()], []
         for _ in range(n_amulets):
             # Handle each amulet untap independently
-            for clone in old_clones:
+            for clone in clones:
                 new_clones += clone.clone_tap(card)
+            clones, new_clones = new_clones, []
+            for clone in clones:
                 clone.lines[-1] += ", " + str(clone.pool) + " in pool"
-            old_clones, new_clones = new_clones, []
         # Now figure out any other consequences, like bouncing
-        for clone in old_clones:
+        for clone in clones:
             new_clones += getattr(clone, "play_" + io.slug(card))()
         return new_clones
 
@@ -146,10 +136,10 @@ class GameState(object):
         self.board.append(card)
         clones = []
         for clone in self.clone_tap(card):
-            clone.lines[-1] += ", " + str(clone.pool) + " in pool"
             clones += getattr(clone, "play_" + io.slug(card))()
+        for clone in clones:
+            clone.lines[-1] += ", " + str(clone.pool) + " in pool"
         return clones
-
 
     def play_bojuka_bog(self):
         return [self]
@@ -163,12 +153,14 @@ class GameState(object):
     def play_gemstone_mine(self):
         return [self]
 
-
     def play_khalni_garden(self):
         return [self]
 
     def play_radiant_fountain(self):
         return [self]
+
+    def play_selesnya_sanctuary(self):
+        return self.bounce_land()
 
     def play_simic_growth_chamber(self):
         return self.bounce_land()
@@ -271,7 +263,6 @@ class GameState(object):
             clones.append(clone)
         return clones
 
-
     def cast_tolaria_west(self):
         clones = []
         for card in set(self.deck):
@@ -302,6 +293,18 @@ class GameState(object):
             clones.append(clone)
         return clones
 
+    def clone_tap_out(self):
+        clones, new_clones = [self], []
+        for card in self.board:
+            if not io.is_land(card):
+                continue
+            for clone in clones:
+                new_clones += clone.clone_tap(card)
+            clones, new_clones = new_clones, []
+        for clone in clones:
+            clone.lines[-1] += ", " + str(clone.pool) + " in pool"
+        return clones
+
     def can_pay(self, cost):
         if cost is None:
             return False
@@ -330,8 +333,17 @@ class GameState(object):
         self.lines.append(" ".join( str(x) for x in args ))
 
     def report(self):
-#        if "turn" in self.lines[-1].lower():
-#            self.lines.pop(-1)
+        if "turn" in self.lines[-1].lower():
+            self.lines.pop(-1)
         [ print(x) for x in self.lines ]
 
-    # ------------------------------------------------------------------
+    def summary(self):
+        if not self.done:
+            return "Failed to finish"
+        # What turn did we play Titan?
+        turn = self.turn
+        # Are we on the play or the draw?
+        draw = 1 if self.on_the_draw else 0
+        # Do we have Amulet in play?
+        fast = 1 if "Amulet of Vigor" in self.board else 0
+        return ",".join( [ str(x) for x in (turn, draw, fast) ] )

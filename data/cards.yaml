@@ -17,7 +17,6 @@
     is_green: true
     is_creature: true
 Blank:
-    display: "?"
     cost: null
 "Bojuka Bog":
     is_land: true
@@ -71,11 +70,17 @@ Forest:
     cost: G
     is_creature: true
     is_green: true
+"Selesnya Sanctuary":
+    display: GW
+    is_land: true
+    taps_for: "1G"
+    is_colorless: true
+    enters_tapped: true
 "Simic Growth Chamber":
-    display: Karoo
+    display: GU
     is_land: true
     is_colorless: true
-    taps_for: 1G
+    taps_for: "GU"
     enters_tapped: true
 "Summoner's Pact":
     display: "Pact"

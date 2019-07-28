@@ -1,2 +1,1 @@
-from .mana import Mana
-from .manager import GameStateManager
+from .manager import GameStateManager, TooManyStates

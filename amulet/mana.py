@@ -17,7 +17,7 @@ class Mana(object):
 
     def __str__(self):
         expr = ""
-        if self.total > self.green + self.blue or self.green + self.blue == 0:
+        if self.total > (self.green + self.blue) or (self.green + self.blue) == 0:
             expr = str(self.total - self.green - self.blue)
         return expr + self.green*"G" + self.blue*"U"
 
