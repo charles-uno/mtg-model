@@ -2,6 +2,11 @@ import random
 
 from . import io, state
 
+MAX_STATES = 1e5
+
+class TooManyStates(RuntimeError):
+    pass
+
 class GameStateManager(object):
 
     def __init__(self, name, draw=False):
@@ -24,6 +29,8 @@ class GameStateManager(object):
                     old_states.append(state)
                 else:
                     new_states.append(state)
+            if len(old_states) + len(new_states) > MAX_STATES:
+                raise TooManyStates
         self.states = new_states
         return None
 

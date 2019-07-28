@@ -21,7 +21,15 @@ def is_land(card):
     return CARDS[card].get("is_land")
 
 def get_cost(card):
-    return mana.Mana(CARDS[card].get("cost"))
+    cost = CARDS[card].get("cost")
+    return cost if cost is None else mana.Mana(cost)
+
+def get_cmc(card):
+    cost = get_cost(card)
+    if cost is None:
+        return 0
+    else:
+        return cost.total
 
 def taps_for(card):
     return mana.Mana(CARDS[card].get("taps_for"))
@@ -32,7 +40,7 @@ def enters_tapped(card):
 # ----------------------------------------------------------------------
 
 def slug(card):
-    return rmchars(card, "'-").lower().replace(" ", "_")
+    return rmchars(card, "',").lower().replace(" ", "_").replace("-", "_")
 
 def display(*cards):
     blurbs = []
@@ -60,6 +68,8 @@ def load(name):
     cards = []
     with open(name, "r") as handle:
         for line in handle:
+            if not line.strip() or line.startswith("#"):
+                continue
             n, name = line.rstrip().split(None, 1)
             cards += int(n) * [name]
     random.shuffle(cards)

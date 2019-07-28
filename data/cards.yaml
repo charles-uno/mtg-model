@@ -2,6 +2,10 @@
     cost: "1"
     display: Amulet
     is_colorless: true
+"Ancient Stirrings":
+    is_green: true
+    cost: G
+    display: Stirrings
 "Arboreal Grazer":
     cost: G
     display: Sloth
@@ -12,6 +16,21 @@
     cost: 2G
     is_green: true
     is_creature: true
+Blank:
+    display: "?"
+    cost: null
+"Bojuka Bog":
+    is_land: true
+    is_colorless: true
+    taps_for: "1"
+    enters_tapped: true
+    display: Bog
+"Boros Garrison":
+    display: Garrison
+    enters_tapped: true
+    taps_for: "2"
+    is_land: true
+    is_colorless: true
 Cantrip:
     cost: G
     is_land: false
@@ -27,6 +46,7 @@ Forest:
     is_land: true
     is_colorless: true
     taps_for: G
+    enters_tapped: true
 "Oath of Nissa":
     display: "Oath"
     cost: G
@@ -34,6 +54,16 @@ Forest:
 "Primeval Titan":
     display: "Titan"
     cost: 4GG
+    is_creature: true
+    is_green: true
+"Radiant Fountain":
+    display: Fountain
+    is_land: true
+    is_colorless: true
+    taps_for: "1"
+"Sakura-Tribe Scout":
+    display: Scout
+    cost: G
     is_creature: true
     is_green: true
 "Simic Growth Chamber":
@@ -44,5 +74,12 @@ Forest:
     enters_tapped: true
 "Summoner's Pact":
     display: "Pact"
-    cost: ""
+    cost: "0"
     is_green: true
+"Tolaria West":
+    display: TWest
+    is_land: true
+    is_colorless: true
+    taps_for: U
+    enters_tapped: true
+    cost: 1UU
