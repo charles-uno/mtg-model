@@ -5,7 +5,6 @@ import amulet
 # ----------------------------------------------------------------------
 
 def main():
-
     manager = amulet.GameStateManager("decks/debug.in")
 
     done_state = None

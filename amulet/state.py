@@ -46,13 +46,14 @@ class GameState(object):
 
     def uid(self):
         return "|".join([
-            ";".join(self.deck),
-            ";".join(self.hand),
-            ";".join(self.board),
-            str(self.turn),
-            str(self.drops),
+            ";".join(sorted(self.board)),
             str(self.debt),
+            ";".join(self.deck),
+            str(self.done),
+            str(self.drops),
+            ";".join(sorted(self.hand)),
             str(self.pool),
+            str(self.turn),
         ])
 
     def __str__(self):
@@ -78,24 +79,37 @@ class GameState(object):
             clone.drops = 1
         clone.drops += clone.board.count("Sakura-Tribe Scout")
         clone.pool = mana.Mana()
-        # Tap everything at the first opportunity. This will eventually
-        # return multiple options when we have to consider colors.
-        for card in clone.board:
-            if io.is_land(card):
-                clone.pool = clone.pool + io.taps_for(card)
-        clone.lines[-1] += ", " + str(clone.pool) + " in pool"
-        # Pay for any pacts
-        if not clone.can_pay(clone.debt):
-            return []
-        if clone.debt:
+        # Tap everything at the first opportunity
+        clones = clone.clone_tap_out()
+
+        # Pay for any pacts. This is also non-deterministic
+        new_clones = []
+        for clone in clones:
             clone.lines[-1] += ", pay " + str(clone.debt) + " for pact"
-        clone.pay(clone.debt)
-        clone.debt = mana.Mana()
-        clone.lines[-1] += ", draw " + io.display(self.deck[0])
-        clone.draw(silent=True)
-        return [clone]
+            new_clones += clone.clone_pay(clone.debt)
+        clones = new_clones
+
+        # Finish up the start of turn stuff
+        for clone in clones:
+            clone.debt = mana.Mana()
+            clone.lines[-1] += ", draw " + io.display(self.deck[0])
+            clone.draw(silent=True)
+
+        return clones
 
     # ------------------------------------------------------------------
+
+    def clone_tap_out(self):
+        old_clones, new_clones = [self], []
+        for card in self.board:
+            if not io.is_land(card):
+                continue
+            for clone in old_clones:
+                new_clones += clone.clone_tap(card)
+            old_clones = []
+        for clone in new_clones:
+            clone.lines[-1] += ", " + str(clone.pool) + " in pool"
+        return new_clones
 
     def clone_play(self, card):
         self.test("playing", card)
@@ -115,17 +129,27 @@ class GameState(object):
         self.hand.remove(card)
         self.board.append(card)
         n_amulets = self.board.count("Amulet of Vigor")
+        old_clones, new_clones = [self.clone()], []
         for _ in range(n_amulets):
-            self.pool = self.pool + io.taps_for(card)
-            self.lines[-1] += ", " + str(self.pool) + " in pool"
-        return getattr(self, "play_" + io.slug(card))()
+            # Handle each amulet untap independently
+            for clone in old_clones:
+                new_clones += clone.clone_tap(card)
+                clone.lines[-1] += ", " + str(clone.pool) + " in pool"
+            old_clones, new_clones = new_clones, []
+        # Now figure out any other consequences, like bouncing
+        for clone in old_clones:
+            new_clones += getattr(clone, "play_" + io.slug(card))()
+        return new_clones
 
     def play_untapped(self, card):
         self.hand.remove(card)
         self.board.append(card)
-        self.pool = self.pool + io.taps_for(card)
-        self.lines[-1] += ", " + str(self.pool) + " in pool"
-        return getattr(self, "play_" + io.slug(card))()
+        clones = []
+        for clone in self.clone_tap(card):
+            clone.lines[-1] += ", " + str(clone.pool) + " in pool"
+            clones += getattr(clone, "play_" + io.slug(card))()
+        return clones
+
 
     def play_bojuka_bog(self):
         return [self]
@@ -135,6 +159,10 @@ class GameState(object):
 
     def play_forest(self):
         return [self]
+
+    def play_gemstone_mine(self):
+        return [self]
+
 
     def play_khalni_garden(self):
         return [self]
@@ -163,16 +191,13 @@ class GameState(object):
     # ------------------------------------------------------------------
 
     def clone_cast(self, card):
-        self.test("about to cast", card)
+        self.test("clone_cast", card)
         if card in self.hand and self.can_pay(io.get_cost(card)):
-            self.test("while casting", card)
-            clone = self.clone("Cast", io.display(card))
-            clone.pay(io.get_cost(card))
-            self.test("after casting", card)
-            clone.hand.remove(card)
-            clones = getattr(clone, "cast_" + io.slug(card))()
-            for clone in clones:
-                clone.test("about to return from casting", card)
+            clones = []
+            for clone in self.clone_pay(io.get_cost(card)):
+                clone.note("Cast", io.display(card))
+                clone.hand.remove(card)
+                clones += getattr(clone, "cast_" + io.slug(card))()
             return clones
         else:
             return []
@@ -269,13 +294,28 @@ class GameState(object):
 
     # ------------------------------------------------------------------
 
+    def clone_tap(self, card):
+        clones = []
+        for m in io.taps_for(card):
+            clone = self.clone()
+            clone.pool += m
+            clones.append(clone)
+        return clones
+
     def can_pay(self, cost):
         if cost is None:
             return False
         return cost <= self.pool
 
-    def pay(self, cost):
-        self.pool = self.pool - cost
+    def clone_pay(self, cost):
+        if not self.pool >= cost:
+            return []
+        clones = []
+        for pool in self.pool.minus(cost):
+            clone = self.clone()
+            clone.pool = pool
+            clones.append(clone)
+        return clones
 
     # ------------------------------------------------------------------
 
@@ -290,8 +330,8 @@ class GameState(object):
         self.lines.append(" ".join( str(x) for x in args ))
 
     def report(self):
-        if "turn" in self.lines[-1].lower():
-            self.lines.pop(-1)
+#        if "turn" in self.lines[-1].lower():
+#            self.lines.pop(-1)
         [ print(x) for x in self.lines ]
 
     # ------------------------------------------------------------------

@@ -2,7 +2,7 @@ import random
 
 from . import io, state
 
-MAX_STATES = 1e5
+MAX_STATES = 1e4
 
 class TooManyStates(RuntimeError):
     pass
@@ -14,21 +14,24 @@ class GameStateManager(object):
         self.turn = 1
         initial_state = state.GameState(deck=deck, turn=1)
         initial_state.draw(8 if draw else 7)
-        self.states = [initial_state]
+        self.states = {initial_state}
 
     def next_turn(self):
         self.turn += 1
         if any( x.done for x in self.states ):
             return
-        old_states, new_states = self.states, []
+        old_states, new_states = self.states, set()
         while old_states:
+
+            print(len(old_states), "old,", len(new_states), "new")
+
             for state in old_states.pop().next_states():
                 if state.done:
                     return state
                 elif state.turn < self.turn:
-                    old_states.append(state)
+                    old_states.add(state)
                 else:
-                    new_states.append(state)
+                    new_states.add(state)
             if len(old_states) + len(new_states) > MAX_STATES:
                 raise TooManyStates
         self.states = new_states

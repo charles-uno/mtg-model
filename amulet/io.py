@@ -32,7 +32,7 @@ def get_cmc(card):
         return cost.total
 
 def taps_for(card):
-    return mana.Mana(CARDS[card].get("taps_for"))
+    return [ mana.Mana(x) for x in CARDS[card].get("taps_for").split(",") ]
 
 def enters_tapped(card):
     return CARDS[card].get("enters_tapped")

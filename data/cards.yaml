@@ -41,6 +41,11 @@ Forest:
     is_colorless: true
     is_land: true
     taps_for: G
+"Gemstone Mine":
+    display: Mine
+    is_colorless: true
+    is_land: true
+    taps_for: G,U
 "Khalni Garden":
     display: Garden
     is_land: true
