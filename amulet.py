@@ -5,7 +5,13 @@ import amulet
 # ----------------------------------------------------------------------
 
 def main():
-    manager = amulet.GameStateManager("decks/debug.in")
+
+    name = "debug"
+
+    infile = "decks/%s.in" % name
+    outfile = "out/%s.out" % name
+
+    manager = amulet.GameStateManager(infile)
 
     done_state = None
     while done_state is None and manager.turn < 4:
@@ -13,7 +19,7 @@ def main():
         try:
             done_state = manager.next_turn()
         except amulet.TooManyStates:
-            print("- too many states")
+            save("- too many states", outfile)
 
     if done_state:
         done_state.report()
@@ -22,8 +28,14 @@ def main():
     else:
         def key(x): return len(x.lines)
         sorted(manager.states, key=key)[-1].report()
-        print("- no solution")
+        save("- no solution", outfile)
 
+# ----------------------------------------------------------------------
+
+def save(line, path):
+    print(line)
+    with open(path, "a") as handle:
+        handle.write(line + "\n")
 
 # ----------------------------------------------------------------------
 
