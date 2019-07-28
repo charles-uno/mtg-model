@@ -1,26 +1,5 @@
-# Green land, enters untapped: Forest, Gemstone Mine
-3 Forest
-4 Gemstone Mine
-# Green land, enters tapped: Khalni Garden
-1 Khalni Garden
-# Nongreen land, enters untapped: Radiant Fountain, Slayers' Stronghold, Cavern of Souls, Ghost Quarter, Sunhome
-5 Radiant Fountain
-# Nongreen land, enters tapped: Tolaria West, Bojuka Bog, Vesuva
-2 Bojuka Bog
-4 Tolaria West
-# Bounce land
-8 Simic Growth Chamber
-1 Boros Garrison
-
-4 Primeval Titan
-4 Summoner's Pact
-
-4 Amulet of Vigor
-4 Ancient Stirrings
-
-4 Azusa, Lost but Seeking
-4 Sakura-Tribe Scout
-4 Explore
-
-# Blanks: Walking Ballista, Engineered Explosives, Pact of Negation
-4 Blank
+10 Amulet of Vigor
+15 Simic Growth Chamber
+15 Gemstone Mine
+10 Azusa, Lost but Seeking
+10 Primeval Titan
