@@ -235,6 +235,23 @@ class GameState(object):
             self.board.append("Azusa, Lost but Seeking")
         return [self]
 
+    def cast_bond_of_flourishing(self):
+        cards = self.deck[:3]
+        # Put everything on the bottom, create a new card for the hand
+        self.deck = self.deck[3:] + cards
+        cards = { c for c in cards if io.is_permanent(c) }
+        if not cards:
+            clone = self.clone()
+            clone.lines[-1] += ", whiff"
+            return [clone]
+        clones = []
+        for c in cards:
+            clone = self.clone()
+            clone.lines[-1] += ", take " + io.display(c)
+            clone.hand.append(c)
+            clones.append(clone)
+        return clones
+
     def cast_cantrip(self):
         self.draw()
         return [self]
@@ -245,6 +262,34 @@ class GameState(object):
         self.drops += 1
         return [self]
 
+    def cast_oath_of_nissa(self):
+        cards = self.deck[:3]
+        # Put everything on the bottom, create a new card for the hand
+        self.deck = self.deck[3:] + cards
+        cards = { c for c in cards if io.is_creature(c) or io.is_land(c) }
+        if not cards:
+            clone = self.clone()
+            clone.lines[-1] += ", whiff"
+            return [clone]
+        clones = []
+        for c in cards:
+            clone = self.clone()
+            clone.lines[-1] += ", take " + io.display(c)
+            clone.hand.append(c)
+            clones.append(clone)
+        return clones
+
+    def cast_opt(self):
+        cards = self.deck[:2]
+        self.deck = self.deck[2:] + cards
+        clones = []
+        for c in cards:
+            clone = self.clone()
+            clone.lines[-1] += ", take " + io.display(c)
+            clone.hand.append(c)
+            clones.append(clone)
+        return clones
+
     def cast_primeval_titan(self):
         self.done = True
         return [self]
@@ -252,6 +297,11 @@ class GameState(object):
     def cast_sakura_tribe_scout(self):
         self.board.append("Sakura-Tribe Scout")
         return [self]
+
+    def cast_simian_spirit_guide(self):
+        self.pool += mana.Mana("1")
+        self.lines.pop(-1)
+        self.note("Exile", io.display("Simian Spirit Guide"))
 
     def cast_summoners_pact(self):
         clones = []

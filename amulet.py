@@ -13,7 +13,7 @@ def main():
 
     parser = argparse.ArgumentParser("Amulet Titan Simulation")
     parser.add_argument("n", nargs="?", help="Number of times to run", type=int, default=0)
-    parser.add_argument("names", nargs="*", help="Deck names to use", default=["debug"])
+    parser.add_argument("names", nargs="*", help="Deck names to use", default=[])
     args = parser.parse_args()
 
     nwidth = len(str(args.n-1))

@@ -9,16 +9,19 @@ with open("data/cards.yaml") as handle:
     CARDS = yaml.safe_load(handle)
 
 def is_colorless(card):
-    return CARDS[card].get("is_colorless")
+    return not CARDS[card].get("color")
 
 def is_creature(card):
-    return CARDS[card].get("is_creature")
+    return CARDS[card].get("type") == "creature"
 
 def is_green(card):
-    return CARDS[card].get("is_green")
+    return CARDS[card].get("color") == "green"
 
 def is_land(card):
-    return CARDS[card].get("is_land")
+    return CARDS[card].get("type") == "land"
+
+def is_permanent(card):
+    return CARDS[card].get("type") in ("artifact", "creature", "enchantment", "land")
 
 def get_cost(card):
     cost = CARDS[card].get("cost")

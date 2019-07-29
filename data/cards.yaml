@@ -1,95 +1,103 @@
 "Amulet of Vigor":
-    cost: "1"
     display: Amulet
-    is_colorless: true
+    cost: "1"
+    type: artifact
 "Ancient Stirrings":
-    is_green: true
+    type: sorcery
+    color: green
     cost: G
     display: Stirrings
 "Arboreal Grazer":
     cost: G
     display: Sloth
-    is_creature: true
-    is_green: true
+    type: creature
+    color: green
 "Azusa, Lost but Seeking":
     display: Azusa
     cost: 2G
-    is_green: true
-    is_creature: true
+    type: creature
+    color: green
 Blank:
     cost: null
 "Bojuka Bog":
-    is_land: true
-    is_colorless: true
+    type: land
     taps_for: "1"
     enters_tapped: true
     display: Bog
+"Bond of Flourishing":
+    type: sorcery
+    color: green
+    cost: "1G"
 "Boros Garrison":
     display: Garrison
     enters_tapped: true
     taps_for: "2"
-    is_land: true
-    is_colorless: true
+    type: land
 Cantrip:
-    cost: G
-    is_land: false
+    cost: "1"
+    type: sorcery
 Explore:
     cost: 1G
-    is_green: true
+    color: green
+    type: sorcery
 Forest:
-    is_colorless: true
-    is_land: true
+    type: land
     taps_for: G
 "Gemstone Mine":
     display: Mine
-    is_colorless: true
-    is_land: true
+    type: land
     taps_for: G,U
 "Khalni Garden":
     display: Garden
-    is_land: true
-    is_colorless: true
+    type: land
     taps_for: G
     enters_tapped: true
 "Oath of Nissa":
     display: "Oath"
+    type: enchantment
+    color: green
     cost: G
-    is_green: true
+"Opt":
+    color: blue
+    type: instant
+    cost: U
 "Primeval Titan":
     display: "Titan"
     cost: 4GG
-    is_creature: true
-    is_green: true
+    type: creature
+    color: green
 "Radiant Fountain":
     display: Fountain
-    is_land: true
-    is_colorless: true
+    type: land
     taps_for: "1"
 "Sakura-Tribe Scout":
     display: Scout
     cost: G
-    is_creature: true
-    is_green: true
+    type: creature
+    color: green
 "Selesnya Sanctuary":
+    type: land
     display: GW
-    is_land: true
     taps_for: "1G"
-    is_colorless: true
     enters_tapped: true
+"Simian Spirit Guide":
+    type: creature
+    display: SSG
+    color: red
+    cost: "0"
 "Simic Growth Chamber":
     display: GU
-    is_land: true
-    is_colorless: true
+    type: land
     taps_for: "GU"
     enters_tapped: true
 "Summoner's Pact":
+    type: instant
+    color: green
     display: "Pact"
     cost: "0"
-    is_green: true
 "Tolaria West":
     display: TWest
-    is_land: true
-    is_colorless: true
+    type: land
     taps_for: U
     enters_tapped: true
     cost: 1UU

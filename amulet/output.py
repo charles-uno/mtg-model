@@ -1,8 +1,12 @@
 import collections
+import os
 
 # ----------------------------------------------------------------------
 
 def print_summary(names):
+
+    if not names:
+        names = sorted( x.split(".")[0] for x in os.listdir("decks") )
 
     namewidth = max( len(x) for x in names ) + 1
     colwidth = 9
@@ -16,10 +20,8 @@ def print_summary(names):
     print(header)
 
     for name in names:
-        outfile = "out/%s.out" % name
-        with open(outfile, "r") as handle:
-            lines = [ x.split("#")[0].rstrip() for x in handle ]
-        total = len(lines)
+        lines = read("out/%s.out" % name)
+        total = max(len(lines), 1)
         tally = collections.defaultdict(int)
         for line in lines:
             if not line:
@@ -32,6 +34,13 @@ def print_summary(names):
             n += tally[t]
             line += "   " + pct(n/total) + " ± " + pct(n**0.5/total)
         print(line)
+
+def read(path):
+    try:
+        with open(path, "r") as handle:
+            return [ x.split("#")[0].rstrip() for x in handle ]
+    except FileNotFoundError:
+        return []
 
 # ----------------------------------------------------------------------
 
