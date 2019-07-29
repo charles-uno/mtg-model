@@ -1,41 +1,37 @@
 #!/usr/bin/env python3
 
+import argparse
+import random
+
 import amulet
 
 # ----------------------------------------------------------------------
 
+MAX_TURNS = 4
+
 def main():
 
-    name = "debug"
+    parser = argparse.ArgumentParser("Amulet Titan Simulation")
+    parser.add_argument("n", nargs="?", help="Number of times to run", type=int, default=0)
+    parser.add_argument("names", nargs="*", help="Deck names to use", default=["debug"])
+    args = parser.parse_args()
 
-    infile = "decks/%s.in" % name
-    outfile = "out/%s.out" % name
+    nwidth = len(str(args.n-1))
 
-    manager = amulet.GameStateManager(infile)
+    # If given multiple names, choose randomly each time
+    last_state = None
+    for trial in range(args.n):
 
-    done_state = None
-    while done_state is None and manager.turn < 4:
+        print("[" + str(trial).rjust(nwidth) + "]", end=" ")
 
-        try:
-            done_state = manager.next_turn()
-        except amulet.TooManyStates:
-            save("- too many states", outfile)
+        name = random.choice(args.names)
+        last_state = amulet.simulate(name) or last_state
+    if last_state:
+        last_state.report()
+    # Giving N=0 means we just want a summary of existing data
+    if not args.n:
+        amulet.print_summary(args.names)
 
-    if done_state:
-        done_state.report()
-        print(done_state.summary())
-
-    else:
-        def key(x): return len(x.lines)
-        sorted(manager.states, key=key)[-1].report()
-        save("- no solution", outfile)
-
-# ----------------------------------------------------------------------
-
-def save(line, path):
-    print(line)
-    with open(path, "a") as handle:
-        handle.write(line + "\n")
 
 # ----------------------------------------------------------------------
 

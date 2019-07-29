@@ -62,8 +62,9 @@ def rmchars(text, chars):
 # ----------------------------------------------------------------------
 
 def load(name):
+    path = "decks/%s.in" % name
     cards = []
-    with open(name, "r") as handle:
+    with open(path, "r") as handle:
         for line in handle:
             if not line.strip() or line.startswith("#"):
                 continue

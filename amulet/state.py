@@ -17,14 +17,15 @@ class GameState(object):
         self.debt = kwargs.pop("debt", mana.Mana())
         self.deck = kwargs.pop("deck")
         self.done = kwargs.pop("done", False)
-        self.on_the_draw = kwargs.pop("on_the_draw")
-        self.drops = kwargs.pop("drops", 1)
-        self.hand = kwargs.pop("hand", [])
+        self.on_the_draw = kwargs.pop("draw")
+        self.drops = kwargs.pop("drops", 0)
+        self.hand = kwargs.pop("hand")
         self.lines = kwargs.pop("lines", [])
         self.pool = kwargs.pop("pool", mana.Mana())
-        self.turn = kwargs.pop("turn", 1)
-        if len(self.lines) == 1:
-            self.lines.append("---- turn 1")
+        self.turn = kwargs.pop("turn", 0)
+        # First line is opening hand
+        if not self.lines:
+            self.note("Draw", io.display(*self.hand))
         self.test("__init__")
         return
 
@@ -38,7 +39,7 @@ class GameState(object):
             drops=self.drops,
             hand=sorted(self.hand),
             lines=self.lines[:],
-            on_the_draw=self.on_the_draw,
+            draw=self.on_the_draw,
             pool=self.pool,
             turn=self.turn,
         )
@@ -94,8 +95,9 @@ class GameState(object):
         # Finish up the start of turn stuff
         for clone in clones:
             clone.debt = mana.Mana()
-            clone.lines[-1] += ", draw " + io.display(self.deck[0])
-            clone.draw(silent=True)
+            if clone.turn > 1 or clone.on_the_draw:
+                clone.lines[-1] += ", draw " + io.display(self.deck[0])
+                clone.draw(silent=True)
         return clones
 
     # ------------------------------------------------------------------
@@ -338,12 +340,13 @@ class GameState(object):
         [ print(x) for x in self.lines ]
 
     def summary(self):
-        if not self.done:
-            return "Failed to finish"
-        # What turn did we play Titan?
-        turn = self.turn
         # Are we on the play or the draw?
         draw = 1 if self.on_the_draw else 0
-        # Do we have Amulet in play?
-        fast = 1 if "Amulet of Vigor" in self.board else 0
+        if self.done:
+            # What turn did we play Titan?
+            turn = self.turn
+            # Do we have Amulet in play?
+            fast = 1 if "Amulet of Vigor" in self.board else 0
+        else:
+            turn, fast = 0, 0
         return ",".join( [ str(x) for x in (turn, draw, fast) ] )
