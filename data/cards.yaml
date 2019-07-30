@@ -36,6 +36,10 @@ Blank:
 Cantrip:
     cost: "1"
     type: sorcery
+"Elvish Rejuvenator":
+    cost: "2G"
+    type: creature
+    color: green
 Explore:
     cost: 1G
     color: green
@@ -52,6 +56,10 @@ Forest:
     type: land
     taps_for: G
     enters_tapped: true
+Manamorphose:
+    type: instant
+    cost: "1G"
+    color: green
 "Oath of Nissa":
     display: "Oath"
     type: enchantment

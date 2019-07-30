@@ -63,5 +63,7 @@ class Mana(object):
             m.total = self.total - cost.total
             m.green = self.green - cost.green - use_green
             m.blue = self.blue - cost.blue - (generic_debt - use_green)
-            manas.add(m)
+            # Make sure we're not using more than we have
+            if m.green >= 0 and m.blue >= 0:
+                manas.add(m)
         return manas

@@ -256,11 +256,40 @@ class GameState(object):
         self.draw()
         return [self]
 
+    def cast_elvish_rejuvenator(self):
+
+        cards = self.deck[:5]
+        # Put everything on the bottom, create a new card for the hand
+        self.deck = self.deck[5:] + cards
+        cards = { c for c in cards if io.is_land(c) }
+        if not cards:
+            clone = self.clone()
+            clone.lines[-1] += ", whiff"
+            return [clone]
+        clones = []
+        for c in cards:
+            clone = self.clone()
+            clone.lines[-1] += ", take " + io.display(c)
+            clone.hand.append(c)
+            clones += clone.play_tapped(c)
+        return clones
+
     def cast_explore(self):
         self.lines[-1] += ", draw %s" % io.display(self.deck[0])
         self.draw(silent=True)
         self.drops += 1
         return [self]
+
+    def cast_manamorphose(self):
+        clones = []
+        for m in ["UU", "UG", "GG"]:
+            clone = self.clone()
+            clone.pool += mana.Mana(m)
+            clone.lines[-1] += ", " + str(clone.pool) + " in pool"
+            clone.lines[-1] += ", draw " + io.display(clone.deck[0])
+            clone.draw(silent=True)
+            clones.append(clone)
+        return clones
 
     def cast_oath_of_nissa(self):
         cards = self.deck[:3]
@@ -301,7 +330,7 @@ class GameState(object):
     def cast_simian_spirit_guide(self):
         self.pool += mana.Mana("1")
         self.lines.pop(-1)
-        self.note("Exile", io.display("Simian Spirit Guide"))
+        self.note("Exile", io.display("Simian Spirit Guide") + ", " + str(self.pool) + " in pool")
 
     def cast_summoners_pact(self):
         clones = []
@@ -338,11 +367,20 @@ class GameState(object):
     # ------------------------------------------------------------------
 
     def clone_tap(self, card):
+
+        before = self.pool
+
         clones = []
         for m in io.taps_for(card):
             clone = self.clone()
             clone.pool += m
             clones.append(clone)
+
+        after = clones[0].pool
+
+        if card == "Selesnya Sanctuary" and "Elvish Rejuvenator" in self.board:
+            print(before, "->", after)
+
         return clones
 
     def clone_tap_out(self):
