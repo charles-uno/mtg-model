@@ -51,11 +51,19 @@ Forest:
     display: Mine
     type: land
     taps_for: G,U
+"Growth Spiral":
+    cost: "UG"
+    color: green
+    type: instant
 "Khalni Garden":
     display: Garden
     type: land
     taps_for: G
     enters_tapped: true
+"Lotus Field":
+    enters_tapped: true
+    taps_for: GGG,UUU
+    type: land
 Manamorphose:
     type: instant
     cost: "1G"
@@ -109,3 +117,7 @@ Manamorphose:
     taps_for: U
     enters_tapped: true
     cost: 1UU
+"Trinket Mage":
+    cost: "2U"
+    type: creature
+    color: blue

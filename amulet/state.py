@@ -1,3 +1,5 @@
+import itertools
+
 from . import io, mana
 
 class GameState(object):
@@ -158,6 +160,20 @@ class GameState(object):
     def play_khalni_garden(self):
         return [self]
 
+    def play_lotus_field(self):
+        lands = { c for c in self.board if io.is_land(c) }
+        clones = []
+        if len(lands) < 2:
+            self.lines[-1] += ", lose " + " and ".join( io.display(c) for c in self.board )
+            self.board = []
+            return [self]
+        for pair in itertools.combinations(lands, 2):
+            clone = self.clone()
+            [ clone.board.remove(c) for c in pair ]
+            clone.lines[-1] += ", lose " + io.display(pair[0]) + " and " + io.display(pair[1])
+            clones.append(clone)
+        return clones
+
     def play_radiant_fountain(self):
         return [self]
 
@@ -257,7 +273,6 @@ class GameState(object):
         return [self]
 
     def cast_elvish_rejuvenator(self):
-
         cards = self.deck[:5]
         # Put everything on the bottom, create a new card for the hand
         self.deck = self.deck[5:] + cards
@@ -275,6 +290,12 @@ class GameState(object):
         return clones
 
     def cast_explore(self):
+        self.lines[-1] += ", draw %s" % io.display(self.deck[0])
+        self.draw(silent=True)
+        self.drops += 1
+        return [self]
+
+    def cast_growth_spiral(self):
         self.lines[-1] += ", draw %s" % io.display(self.deck[0])
         self.draw(silent=True)
         self.drops += 1
@@ -331,6 +352,7 @@ class GameState(object):
         self.pool += mana.Mana("1")
         self.lines.pop(-1)
         self.note("Exile", io.display("Simian Spirit Guide") + ", " + str(self.pool) + " in pool")
+        return [self]
 
     def cast_summoners_pact(self):
         clones = []
@@ -352,6 +374,17 @@ class GameState(object):
             clone = self.clone()
             clone.lines.pop(-1)
             clone.note("Transmute", io.display("Tolaria West"), "for", io.display(card))
+            clone.hand.append(card)
+            clones.append(clone)
+        return clones
+
+    def cast_trinket_mage(self):
+        clones = []
+        for card in set(self.deck):
+            if not io.is_artifact(card) or io.get_cmc(card) > 1:
+                continue
+            clone = self.clone()
+            clone.lines[-1] += ", grab " + io.display(card)
             clone.hand.append(card)
             clones.append(clone)
         return clones

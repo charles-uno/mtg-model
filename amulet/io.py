@@ -8,6 +8,9 @@ from . import mana
 with open("data/cards.yaml") as handle:
     CARDS = yaml.safe_load(handle)
 
+def is_artifact(card):
+    return CARDS[card].get("type") == "artifact"
+
 def is_colorless(card):
     return not CARDS[card].get("color")
 

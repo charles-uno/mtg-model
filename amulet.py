@@ -43,4 +43,7 @@ def all_decks():
 # ----------------------------------------------------------------------
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Killed")
