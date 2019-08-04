@@ -1,4 +1,5 @@
 import random
+import sys
 import yaml
 
 from . import mana
@@ -8,23 +9,37 @@ from . import mana
 with open("data/cards.yaml") as handle:
     CARDS = yaml.safe_load(handle)
 
+def get_types(card):
+    try:
+        return CARDS[card]["type"].split(",")
+    except KeyError:
+        print("Missing types for:", card)
+        sys.exit(1)
+
 def is_artifact(card):
-    return CARDS[card].get("type") == "artifact"
+    return "artifact" in get_types(card)
+
+def is_basic_land(card):
+    return "basic" in get_types(card) and "land" in get_types(card)
 
 def is_colorless(card):
     return not CARDS[card].get("color")
 
 def is_creature(card):
-    return CARDS[card].get("type") == "creature"
+    return "creature" in get_types(card)
 
 def is_green(card):
     return CARDS[card].get("color") == "green"
 
 def is_land(card):
-    return CARDS[card].get("type") == "land"
+    return "land" in get_types(card)
 
 def is_permanent(card):
-    return CARDS[card].get("type") in ("artifact", "creature", "enchantment", "land")
+    return any( t in get_types(card) for t in ("artifact", "creature", "enchantment", "land") )
+
+def get_activation_cost(card):
+    cost = CARDS[card].get("activation_cost")
+    return cost if cost is None else mana.Mana(cost)
 
 def get_cost(card):
     cost = CARDS[card].get("cost")
@@ -58,7 +73,7 @@ def display(*cards):
     return " ".join(blurbs)
 
 def disp(card):
-    return rmchars(card, "-' ,")
+    return rmchars(card, "-' ,.")
 
 def rmchars(text, chars):
     for c in chars:

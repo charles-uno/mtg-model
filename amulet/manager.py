@@ -50,7 +50,7 @@ def play_turns(state):
 
 # ----------------------------------------------------------------------
 
-MAX_STATES = 3e4
+MAX_STATES = 1e4
 
 def play_turn(states):
     # If we finished last time around, short-circuit this one

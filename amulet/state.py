@@ -24,6 +24,7 @@ class GameState(object):
         self.hand = kwargs.pop("hand")
         self.lines = kwargs.pop("lines", [])
         self.pool = kwargs.pop("pool", mana.Mana())
+        self.suspend = kwargs.pop("suspend", [])
         self.turn = kwargs.pop("turn", 0)
         # First line is opening hand
         if not self.lines:
@@ -43,6 +44,7 @@ class GameState(object):
             lines=self.lines[:],
             draw=self.on_the_draw,
             pool=self.pool,
+            suspend=self.suspend[:],
             turn=self.turn,
         )
         if notes:
@@ -58,6 +60,7 @@ class GameState(object):
             str(self.drops),
             ";".join(sorted(self.hand)),
             str(self.pool),
+            ";".join(sorted(self.suspend)),
             str(self.turn),
         ])
 
@@ -70,6 +73,7 @@ class GameState(object):
         for card in set(self.hand):
             clones += self.clone_play(card)
             clones += self.clone_cast(card)
+            clones += self.clone_activate(card)
         return clones
 
     # ------------------------------------------------------------------
@@ -84,9 +88,13 @@ class GameState(object):
             clone.drops = 1
         clone.drops += clone.board.count("Sakura-Tribe Scout")
         clone.pool = mana.Mana()
+        clones = clone.handle_suspend()
         # Tap everything at the first opportunity. This is not
         # deterministic because some lands can tap for different colors.
-        clones = clone.clone_tap_out()
+        new_clones = []
+        for clone in clones:
+            new_clones += clone.clone_tap_out()
+        clones = new_clones
         # Pay for any pacts. This is also non-deterministic
         if self.debt:
             new_clones = []
@@ -100,6 +108,23 @@ class GameState(object):
             if clone.turn > 1 or clone.on_the_draw:
                 clone.lines[-1] += ", draw " + io.display(self.deck[0])
                 clone.draw(silent=True)
+        return clones
+
+    def handle_suspend(self):
+        for card in self.suspend:
+            if card.count(".") > 1:
+                self.lines[-1] += ", " + io.display(card) + " ticking down"
+        new_suspend = [ x.replace(".", "", 1) for x in self.suspend ]
+        to_resolve = [ x for x in new_suspend if "." not in x ]
+        clone = self.clone()
+        clone.suspend = [ x for x in new_suspend if "." in x ]
+        clones = [clone]
+        for card in to_resolve:
+            new_clones = []
+            for clone in clones:
+                clone.lines[-1] += ", cast " + io.display(card) + " from exile"
+                new_clones += getattr(clone, "cast_" + io.slug(card))()
+            clones = new_clones
         return clones
 
     # ------------------------------------------------------------------
@@ -174,14 +199,23 @@ class GameState(object):
             clones.append(clone)
         return clones
 
+    def play_mountain(self):
+        return [self]
+
     def play_radiant_fountain(self):
         return [self]
 
     def play_selesnya_sanctuary(self):
         return self.bounce_land()
 
+    def play_sheltered_thicket(self):
+        return [self]
+
     def play_simic_growth_chamber(self):
         return self.bounce_land()
+
+    def play_stomping_ground(self):
+        return [self]
 
     def play_tolaria_west(self):
         return [self]
@@ -197,6 +231,14 @@ class GameState(object):
             c.hand.append(card)
             clones.append(c)
         return clones
+
+    def play_valakut_the_molten_pinnacle(self):
+        return [self]
+
+    def play_wooded_foothills(self):
+        self.board.remove("Wooded Foothills")
+        self.hand.append("Forest")
+        return self.play_untapped("Forest")
 
     # ------------------------------------------------------------------
 
@@ -348,10 +390,29 @@ class GameState(object):
         self.board.append("Sakura-Tribe Scout")
         return [self]
 
+    def cast_sakura_tribe_elder(self):
+        cards = { x for x in set(self.deck) if io.is_basic_land(x) }
+        clones = []
+        for card in cards:
+            clone = self.clone()
+            clone.lines[-1] += ", grab " + io.display(card)
+            clone.hand.append(card)
+            clone.play_tapped(card)
+            clones.append(clone)
+        return clones
+
+    def cast_search_for_tomorrow(self):
+        cards = { x for x in set(self.deck) if io.is_basic_land(x) }
+        clones = []
+        for card in cards:
+            clone = self.clone()
+            clone.lines[-1] += ", grab " + io.display(card)
+            clone.hand.append(card)
+            clone.play_untapped(card)
+            clones.append(clone)
+        return clones
+
     def cast_simian_spirit_guide(self):
-        self.pool += mana.Mana("1")
-        self.lines.pop(-1)
-        self.note("Exile", io.display("Simian Spirit Guide") + ", " + str(self.pool) + " in pool")
         return [self]
 
     def cast_summoners_pact(self):
@@ -366,22 +427,58 @@ class GameState(object):
             clones.append(clone)
         return clones
 
-    def cast_tolaria_west(self):
-        clones = []
-        for card in set(self.deck):
-            if io.get_cmc(card) != 0:
-                continue
-            clone = self.clone()
-            clone.lines.pop(-1)
-            clone.note("Transmute", io.display("Tolaria West"), "for", io.display(card))
-            clone.hand.append(card)
-            clones.append(clone)
-        return clones
+    def cast_through_the_breach(self):
+        if "Primeval Titan" not in self.hand:
+            return []
+        # Stick a dummy Amulet in play to signal a "fast" win
+        self.board.append("Amulet of Vigor")
+        self.done = True
+        return [self]
 
     def cast_trinket_mage(self):
         clones = []
         for card in set(self.deck):
             if not io.is_artifact(card) or io.get_cmc(card) > 1:
+                continue
+            clone = self.clone()
+            clone.lines[-1] += ", grab " + io.display(card)
+            clone.hand.append(card)
+            clones.append(clone)
+        return clones
+
+    # ------------------------------------------------------------------
+
+    def clone_activate(self, card):
+        self.test("clone_activate", card)
+        if card in self.hand and self.can_pay(io.get_activation_cost(card)):
+            clones = []
+            for clone in self.clone_pay(io.get_activation_cost(card)):
+                clone.note("Activate", io.display(card))
+                clone.hand.remove(card)
+                clones += getattr(clone, "activate_" + io.slug(card))()
+            return clones
+        else:
+            return []
+
+    def activate_search_for_tomorrow(self):
+        self.suspend.append("Search for Tomorrow..")
+        return [self]
+
+    def activate_sheltered_thicket(self):
+        self.lines[-1] += ", draw " + io.display(self.deck[0])
+        self.draw(silent=True)
+        self.lines.pop(-1)
+        return [self]
+
+    def activate_simian_spirit_guide(self):
+        self.pool += mana.Mana("1")
+        self.lines[-1] += ", " + str(self.pool) + " in pool"
+        return [self]
+
+    def activate_tolaria_west(self):
+        clones = []
+        for card in set(self.deck):
+            if io.get_cmc(card) != 0:
                 continue
             clone = self.clone()
             clone.lines[-1] += ", grab " + io.display(card)

@@ -19,6 +19,7 @@
     color: green
 Blank:
     cost: null
+    type: ""
 "Bojuka Bog":
     type: land
     taps_for: "1"
@@ -45,7 +46,7 @@ Explore:
     color: green
     type: sorcery
 Forest:
-    type: land
+    type: basic,land
     taps_for: G
 "Gemstone Mine":
     display: Mine
@@ -68,6 +69,9 @@ Manamorphose:
     type: instant
     cost: "1G"
     color: green
+Mountain:
+    type: basic,land
+    taps_for: "1"
 "Oath of Nissa":
     display: "Oath"
     type: enchantment
@@ -86,38 +90,67 @@ Manamorphose:
     display: Fountain
     type: land
     taps_for: "1"
+"Sakura-Tribe Elder":
+    display: Scout
+    cost: "1G"
+    type: creature
+    color: green
 "Sakura-Tribe Scout":
     display: Scout
     cost: G
     type: creature
     color: green
+"Search for Tomorrow":
+    display: Search
+    cost: "2G"
+    type: sorcery
+    activation_cost: "G"
 "Selesnya Sanctuary":
     type: land
     display: GW
     taps_for: "1G"
     enters_tapped: true
+"Sheltered Thicket":
+    type: land
+    enters_tapped: true
+    taps_for: G
+    activation_cost: "2"
 "Simian Spirit Guide":
     type: creature
     display: SSG
     color: red
-    cost: "0"
+    activation_cost: "0"
 "Simic Growth Chamber":
     display: GU
     type: land
     taps_for: "GU"
     enters_tapped: true
+"Stomping Ground":
+    taps_for: G
+    type: land
 "Summoner's Pact":
     type: instant
     color: green
     display: "Pact"
     cost: "0"
+"Through the Breach":
+    type: instant
+    cost: "5"
+    color: red
 "Tolaria West":
     display: TWest
     type: land
     taps_for: U
     enters_tapped: true
-    cost: 1UU
+    activation_cost: 1UU
 "Trinket Mage":
     cost: "2U"
     type: creature
     color: blue
+"Valakut, the Molten Pinnacle":
+    type: land
+    taps_for: "1"
+    enters_tapped: true
+"Wooded Foothills":
+    type: land
+    taps_for: ""
