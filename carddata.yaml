@@ -41,6 +41,10 @@ Cantrip:
     cost: "2G"
     type: creature
     color: green
+"Expedition Map":
+    type: artifact
+    cost: "1"
+    activation_cost: "2"
 Explore:
     cost: 1G
     color: green
@@ -140,6 +144,14 @@ Mountain:
     color: green
     display: "Pact"
     cost: "0"
+"Sylvan Scrying":
+    type: sorcery
+    color: green
+    cost: "1G"
+"Temple of Mystery":
+    type: land
+    enters_tapped: true
+    taps_for: G,U
 "Through the Breach":
     type: instant
     cost: "5"
@@ -150,6 +162,11 @@ Mountain:
     taps_for: U
     enters_tapped: true
     activation_cost: 1UU
+"Tranquil Thicket":
+    type: land
+    taps_for: G
+    enters_tapped: true
+    activation_cost: G
 "Trinket Mage":
     cost: "2U"
     type: creature
@@ -161,3 +178,6 @@ Mountain:
 "Wooded Foothills":
     type: land
     taps_for: ""
+"Zhalfirin Void":
+    type: land
+    taps_for: "1"

@@ -250,6 +250,16 @@ class BaseState(object):
             self.note("Draw", carddata.display(*self.deck[:n]))
         self.hand, self.deck = self.hand + self.deck[:n], self.deck[n:]
 
+    def scry(self, n):
+        if n > 1:
+            raise RuntimeError("Scry > 1 is not yet supported")
+        top = self.clone()
+        top.lines[-1] += ", scry " + carddata.display(self.deck[0]) + " to top"
+        bot = self.clone()
+        bot.lines[-1] += ", scry " + carddata.display(self.deck[0]) + " to bottom"
+        bot.deck = bot.deck[1:] + bot.deck[:1]
+        return top, bot
+
     def note(self, *args):
         self.lines.append(" ".join(str(x) for x in args))
 

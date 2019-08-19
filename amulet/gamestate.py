@@ -70,7 +70,13 @@ class GameState(basestate.BaseState):
     def play_stomping_ground(self):
         return [self]
 
+    def play_temple_of_mystery(self):
+        return self.scry(1)
+
     def play_tolaria_west(self):
+        return [self]
+
+    def play_tranquil_thicket(self):
         return [self]
 
     def play_valakut_the_molten_pinnacle(self):
@@ -80,6 +86,9 @@ class GameState(basestate.BaseState):
         self.board.remove("Wooded Foothills")
         self.hand.append("Forest")
         return self.play_untapped("Forest")
+
+    def play_zhalfirin_void(self):
+        return self.scry(1)
 
     def cast_amulet_of_vigor(self):
         self.board.append("Amulet of Vigor")
@@ -156,6 +165,10 @@ class GameState(basestate.BaseState):
             clone.hand.append(c)
             clones += clone.play_tapped(c)
         return clones
+
+    def cast_expedition_map(self):
+        self.board.append("Expedition Map")
+        return [self]
 
     def cast_explore(self):
         self.lines[-1] += ", draw %s" % carddata.display(self.deck[0])
@@ -270,6 +283,15 @@ class GameState(basestate.BaseState):
             clones.append(clone)
         return clones
 
+    def cast_sylvan_scrying(self):
+        clones = []
+        for card in carddata.lands(self.deck):
+            clone = self.clone()
+            clone.lines[-1] += ", grab " + carddata.display(card)
+            clone.hand.append(card)
+            clones.append(clone)
+        return clones
+
     def cast_through_the_breach(self):
         if "Primeval Titan" not in self.hand:
             return []
@@ -289,6 +311,17 @@ class GameState(basestate.BaseState):
             clones.append(clone)
         return clones
 
+    def activate_expedition_map(self):
+        if "Expedition Map" not in self.board:
+            return []
+        clones = []
+        for card in carddata.lands(self.deck):
+            clone = self.clone()
+            clone.lines[-1] += ", grab " + carddata.display(card)
+            clone.hand.append(card)
+            clones.append(clone)
+        return clones
+
     def activate_search_for_tomorrow(self):
         self.suspend.append("Search for Tomorrow..")
         return [self]
@@ -296,12 +329,16 @@ class GameState(basestate.BaseState):
     def activate_sheltered_thicket(self):
         self.lines[-1] += ", draw " + carddata.display(self.deck[0])
         self.draw(silent=True)
-        self.lines.pop(-1)
         return [self]
 
     def activate_simian_spirit_guide(self):
         self.pool += mana.Mana("1")
         self.lines[-1] += ", " + str(self.pool) + " in pool"
+        return [self]
+
+    def activate_tranquil_thicket(self):
+        self.lines[-1] += ", draw " + carddata.display(self.deck[0])
+        self.draw(silent=True)
         return [self]
 
     def activate_tolaria_west(self):
