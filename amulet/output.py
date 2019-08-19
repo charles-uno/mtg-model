@@ -5,8 +5,8 @@ import os
 
 def print_summary(names):
     if not names:
-        names = sorted( x.split(".")[0] for x in os.listdir("decks") )
-    namewidth = max( len(x) for x in names ) + 1
+        names = sorted(x.split(".")[0] for x in os.listdir("decks"))
+    namewidth = max(len(x) for x in names) + 1
     colwidth = 9
     turns = [2, 3, 4]
     header = "name".ljust(namewidth)
@@ -14,7 +14,7 @@ def print_summary(names):
         header += "   " + ("turn %d" % t).rjust(colwidth)
     print(header)
     for name in names:
-        lines = read("out/%s.out" % name)
+        lines = read("data/%s.csv" % name)
         total = max(len(lines), 1)
         tally = collections.defaultdict(int)
         for line in lines:
@@ -33,7 +33,7 @@ def print_summary(names):
 def read(path):
     try:
         with open(path, "r") as handle:
-            return [ x.split("#")[0].rstrip() for x in handle ]
+            return [x.split("#")[0].rstrip() for x in handle]
     except FileNotFoundError:
         return []
 

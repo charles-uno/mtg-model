@@ -55,6 +55,8 @@ amulet-02      2% ±  0%   30% ±  1%   67% ±  2%
 amulet-03      4% ±  0%   33% ±  1%   72% ±  2%
 ```
 
+Uncertainties are based on a [normal approximation](https://alexgude.com/blog/fate-dice-intervals/). 
+
 # Implementation
 
 The model starts out with a full hand and an empty board. Each time it's faced with a choice, it clones the game state and tries all possible options. For example, if it's got one in hand, one clone will cast Summoner's Pact on turn one then pass without making a land drop. This approach isn't particularly efficient -- most of the lines are terrible -- but it guarantees that we'll always find the fastest way to get Primeval Titan on the table, even when faced with non-trivial choices. With slight tweaks, the model could instead try to assemble Tron or cast Hogaak just as single-mindedly.
@@ -66,9 +68,9 @@ There are a pair of significant simplifying assumptions:
 
 # Adding Decks and Cards
 
-To look at a different list, create a new file under `decks/` and put your list in it. Blank lines and comments (starting with `#`) are ignored by the parser. If the deck uses new cards, fill in their color, types, etc in `data/cards.yaml`. Then:
+To look at a different list, create a new file under `decks/` and put your list in it. Blank lines and comments (starting with `#`) are ignored by the parser. If the deck uses new cards, fill in their color, types, etc in `carddata.yaml`. Then:
 
-- For land Foo, create the function `play_foo(self)` in the `GameState` object in `amulet/state.py`
+- For land Foo, create the function `play_foo(self)` in the `GameState` object in `amulet/gamestate.py`
 - For spell Foo, create the function `cast_foo(self)`
 - For anything with an additional mode (such as cycling on Shefet Monitor, transmute on Tolaria West, suspend on Search for Tomorrow), create the function `activate_foo(self)`
 

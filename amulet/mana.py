@@ -1,9 +1,8 @@
+"""
+We keep track of graan, blue, and total/other. This means we potentially
+have to look at multiple ways to pay each cost.
+"""
 
-"""
-Note: for the moment, we only keep track of green and total. Things will
-get a lot dicier when we have two colors, neither of which is "better"
-than the other.
-"""
 
 class Mana(object):
 
@@ -17,8 +16,9 @@ class Mana(object):
 
     def __str__(self):
         expr = ""
-        if self.total > (self.green + self.blue) or (self.green + self.blue) == 0:
-            expr = str(self.total - self.green - self.blue)
+        colored = self.green + self.blue
+        if self.total > colored or colored == 0:
+            expr = str(self.total - colored)
         return expr + self.green*"G" + self.blue*"U"
 
     def __bool__(self):
@@ -32,10 +32,18 @@ class Mana(object):
         return m
 
     def __ge__(self, other):
-        return self.green >= other.green and self.blue >= other.blue and self.total >= other.total
+        return (
+            self.green >= other.green and
+            self.blue >= other.blue and
+            self.total >= other.total
+        )
 
     def __le__(self, other):
-        return self.green <= other.green and self.blue <= other.blue and self.total <= other.total
+        return (
+            self.green <= other.green and
+            self.blue <= other.blue and
+            self.total <= other.total
+        )
 
     def minus(self, cost):
         """Accept a mana cost. Return a list of potential pools
