@@ -71,7 +71,7 @@ class GameState(basestate.BaseState):
         return [self]
 
     def play_temple_of_mystery(self):
-        return self.scry(1)
+        return self.clone_scry(1)
 
     def play_tolaria_west(self):
         return [self]
@@ -88,7 +88,7 @@ class GameState(basestate.BaseState):
         return self.play_untapped("Forest")
 
     def play_zhalfirin_void(self):
-        return self.scry(1)
+        return self.clone_scry(1)
 
     def cast_amulet_of_vigor(self):
         self.board.append("Amulet of Vigor")
@@ -105,10 +105,7 @@ class GameState(basestate.BaseState):
             return [clone]
         clones = []
         for c in cards:
-            clone = self.clone()
-            clone.lines[-1] += ", take " + carddata.display(c)
-            clone.hand.append(c)
-            clones.append(clone)
+            clones.append(self.clone_grab(c))
         return clones
 
     def cast_arboreal_grazer(self):
@@ -140,14 +137,15 @@ class GameState(basestate.BaseState):
             return [clone]
         clones = []
         for c in cards:
-            clone = self.clone()
-            clone.lines[-1] += ", take " + carddata.display(c)
-            clone.hand.append(c)
-            clones.append(clone)
+            clones.append(self.clone_grab(c))
         return clones
 
     def cast_cantrip(self):
-        self.draw()
+        self.draw(1)
+        return [self]
+
+    def cast_chromatic_star(self):
+        self.board.append("Expedition Map")
         return [self]
 
     def cast_elvish_rejuvenator(self):
@@ -160,9 +158,7 @@ class GameState(basestate.BaseState):
             return [clone]
         clones = []
         for c in cards:
-            clone = self.clone()
-            clone.lines[-1] += ", take " + carddata.display(c)
-            clone.hand.append(c)
+            clone = self.clone_grab(c)
             clones += clone.play_tapped(c)
         return clones
 
@@ -171,14 +167,12 @@ class GameState(basestate.BaseState):
         return [self]
 
     def cast_explore(self):
-        self.lines[-1] += ", draw %s" % carddata.display(self.deck[0])
-        self.draw(silent=True)
+        self.draw(1)
         self.drops += 1
         return [self]
 
     def cast_growth_spiral(self):
-        self.lines[-1] += ", draw %s" % carddata.display(self.deck[0])
-        self.draw(silent=True)
+        self.draw(1)
         self.drops += 1
         return [self]
 
@@ -187,9 +181,8 @@ class GameState(basestate.BaseState):
         for m in ["UU", "UG", "GG"]:
             clone = self.clone()
             clone.pool += mana.Mana(m)
-            clone.lines[-1] += ", " + str(clone.pool) + " in pool"
-            clone.lines[-1] += ", draw " + carddata.display(clone.deck[0])
-            clone.draw(silent=True)
+            clone.note_pool()
+            clone.draw(1)
             clones.append(clone)
         return clones
 
@@ -210,14 +203,10 @@ class GameState(basestate.BaseState):
         return clones
 
     def cast_opt(self):
-        cards = self.deck[:2]
-        self.deck = self.deck[2:] + cards
+        cards, self.deck = self.deck[:2], self.deck[2:] + self.deck[:2]
         clones = []
         for c in cards:
-            clone = self.clone()
-            clone.lines[-1] += ", take " + carddata.display(c)
-            clone.hand.append(c)
-            clones.append(clone)
+            clones.append(self.clone_grab(c))
         return clones
 
     def cast_primeval_titan(self):
@@ -231,9 +220,7 @@ class GameState(basestate.BaseState):
     def cast_sakura_tribe_elder(self):
         clones = []
         for card in carddata.basic_lands(self.deck):
-            clone = self.clone()
-            clone.lines[-1] += ", grab " + carddata.display(card)
-            clone.hand.append(card)
+            clone = self.clone_grab(card)
             clone.play_tapped(card)
             clones.append(clone)
         return clones
@@ -241,9 +228,7 @@ class GameState(basestate.BaseState):
     def cast_search_for_tomorrow(self):
         clones = []
         for card in carddata.basic_lands(self.deck):
-            clone = self.clone()
-            clone.lines[-1] += ", grab " + carddata.display(card)
-            clone.hand.append(card)
+            clone = self.clone_grab(card)
             clone.play_untapped(card)
             clones.append(clone)
         return clones
@@ -286,9 +271,7 @@ class GameState(basestate.BaseState):
     def cast_sylvan_scrying(self):
         clones = []
         for card in carddata.lands(self.deck):
-            clone = self.clone()
-            clone.lines[-1] += ", grab " + carddata.display(card)
-            clone.hand.append(card)
+            clone = self.clone_grab(card)
             clones.append(clone)
         return clones
 
@@ -305,9 +288,19 @@ class GameState(basestate.BaseState):
         for card in set(self.deck):
             if not carddata.is_artifact(card) or carddata.cmc(card) > 1:
                 continue
+            clone = self.clone_grab(card)
+            clones.append(clone)
+        return clones
+
+    def activate_chromatic_star(self):
+        if "Chromatic Star" not in self.board:
+            return []
+        clones = []
+        for m in "GU":
             clone = self.clone()
-            clone.lines[-1] += ", grab " + carddata.display(card)
-            clone.hand.append(card)
+            clone.pool += mana.Mana(m)
+            clone.note_pool()
+            clone.draw(1)
             clones.append(clone)
         return clones
 
@@ -316,10 +309,7 @@ class GameState(basestate.BaseState):
             return []
         clones = []
         for card in carddata.lands(self.deck):
-            clone = self.clone()
-            clone.lines[-1] += ", grab " + carddata.display(card)
-            clone.hand.append(card)
-            clones.append(clone)
+            clones.append(self.clone_grab(card))
         return clones
 
     def activate_search_for_tomorrow(self):
@@ -327,18 +317,16 @@ class GameState(basestate.BaseState):
         return [self]
 
     def activate_sheltered_thicket(self):
-        self.lines[-1] += ", draw " + carddata.display(self.deck[0])
-        self.draw(silent=True)
+        self.draw(1)
         return [self]
 
     def activate_simian_spirit_guide(self):
         self.pool += mana.Mana("1")
-        self.lines[-1] += ", " + str(self.pool) + " in pool"
+        self.note_pool()
         return [self]
 
     def activate_tranquil_thicket(self):
-        self.lines[-1] += ", draw " + carddata.display(self.deck[0])
-        self.draw(silent=True)
+        self.draw(1)
         return [self]
 
     def activate_tolaria_west(self):
@@ -346,8 +334,5 @@ class GameState(basestate.BaseState):
         for card in set(self.deck):
             if carddata.cmc(card) != 0:
                 continue
-            clone = self.clone()
-            clone.lines[-1] += ", grab " + carddata.display(card)
-            clone.hand.append(card)
-            clones.append(clone)
+            clones.append(self.clone_grab(card))
         return clones

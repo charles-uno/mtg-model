@@ -37,6 +37,10 @@ Blank:
 Cantrip:
     cost: "1"
     type: sorcery
+"Chromatic Star":
+    type: artifact
+    cost: "1"
+    activation_cost: "1"
 "Elvish Rejuvenator":
     cost: "2G"
     type: creature

@@ -106,8 +106,7 @@ class BaseState(object):
         for clone in clones:
             clone.debt = mana.Mana()
             if clone.turn > 1 or not clone.play:
-                clone.lines[-1] += ", draw " + carddata.display(self.deck[0])
-                clone.draw(silent=True)
+                clone.draw(1)
         return clones
 
     def handle_suspend(self):
@@ -152,7 +151,7 @@ class BaseState(object):
                 new_clones += clone.clone_tap(card)
             clones, new_clones = new_clones, []
             for clone in clones:
-                clone.lines[-1] += ", " + str(clone.pool) + " in pool"
+                clone.note_pool()
         # Now figure out any other consequences, like bouncing
         for clone in clones:
             new_clones += getattr(clone, "play_" + carddata.slug(card))()
@@ -165,7 +164,7 @@ class BaseState(object):
         for clone in self.clone_tap(card):
             clones += getattr(clone, "play_" + carddata.slug(card))()
         for clone in clones:
-            clone.lines[-1] += ", " + str(clone.pool) + " in pool"
+            clone.note_pool()
         return clones
 
     def bounce_land(self):
@@ -227,7 +226,7 @@ class BaseState(object):
                 new_clones += clone.clone_tap(card)
             clones, new_clones = new_clones, []
         for clone in clones:
-            clone.lines[-1] += ", " + str(clone.pool) + " in pool"
+            clone.note_pool()
         return clones
 
     def can_pay(self, cost):
@@ -245,12 +244,25 @@ class BaseState(object):
             clones.append(clone)
         return clones
 
-    def draw(self, n=1, silent=False):
-        if not silent:
+    def note_pool(self):
+        self.lines[-1] += ", " + str(self.pool) + " in pool"
+
+    def draw(self, n=1):
+        if self.lines:
+            self.lines[-1] += ", draw " + carddata.display(*self.deck[:n])
+        else:
             self.note("Draw", carddata.display(*self.deck[:n]))
         self.hand, self.deck = self.hand + self.deck[:n], self.deck[n:]
+        return
 
-    def scry(self, n):
+    def clone_grab(self, card):
+        """Shuffling is a problem. Create a new card instead."""
+        clone = self.clone()
+        clone.lines[-1] += ", grab " + carddata.display(card)
+        clone.hand.append(card)
+        return clone
+
+    def clone_scry(self, n):
         if n > 1:
             raise RuntimeError("Scry > 1 is not yet supported")
         top = self.clone()
