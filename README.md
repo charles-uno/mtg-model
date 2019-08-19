@@ -4,15 +4,22 @@ The script `amulet.py` models games of Amulet Titan by exhaustive search. It's n
 
 # Usage
 
-Punch in:
+Default usage is simply:
 
 ```
-./amulet.py 1
+$ ./amulet.py
 ```
 
-This will model a single game using a randomly-chosen list from `decks/`. It'll also print out the line-by-line actions it took to get Primeval Titan on the table, something like:
+This tells the model to goldfish hands on loop until it's killed with `Ctrl-C`. Deck lists will be chosen at random from those available in `decks/`. To limit the run to certain deck lists, give the names of those lists as sequential arguments:
 
 ```
+$ ./amulet.py amulet-00 amulet-03
+```
+
+To see what's going on under the hood, use the `--debug` flag. This will cause the model to stop as soon as it finds a hand that can get Primeval Titan on the table, and print the line-by-line choices it used to get there. Output will look something like:
+
+```
+$ ./amulet.py --debug
 [0] [ amulet-16] 2,1,1
 Draw AmuletofVigor 2*Forest PrimevalTitan RadiantFountain SakuraTribeScout SummonersPact
 ---- turn 1, 0 in pool, draw AncientStirrings
@@ -31,30 +38,17 @@ Play SelesnyaSanctuary, 3GGGG in pool, 4GGGGG in pool, bounce Forest
 Cast PrimevalTitan
 ```
 
-To get a bunch of data for a specific deck, use:
-
-```
-./amulet.py 1000 amulet-03
-```
-
-This will run the list `decks/amulet-03.in` for a thousand games and store the results in `out/amulet-03.out`. it'll also print the line-by-line choices for the final game it solves.
-
 # Results
 
-The result of each run gets stored in `data/DECKNAME.csv`. It keeps track of what turn Titan hit the table, play/draw, and whether it's a "fast" Titan via Amulet of Vigor or Through the Breach. To see a summary of that data, run with no arguments:
+The result of each run gets stored in `data/`. It keeps track of what turn Titan hit the table, play/draw, and whether it's a "fast" Titan via Amulet of Vigor or Through the Breach. To see a summary of that data, use:
 
 ```
-./amulet.py
-```
-
-Which will output something like:
-
-```
+$ ./amulet.py --report
 name             turn 2      turn 3      turn 4
-amulet-00      2% ±  0%   27% ±  1%   63% ±  2%
-amulet-01      4% ±  0%   26% ±  1%   60% ±  2%
-amulet-02      2% ±  0%   30% ±  1%   67% ±  2%
-amulet-03      4% ±  0%   33% ±  1%   72% ±  2%
+amulet-00      2% ±  0%   27% ±  1%   63% ±  1%
+amulet-01      4% ±  0%   26% ±  1%   60% ±  1%
+amulet-02      2% ±  0%   30% ±  1%   67% ±  1%
+amulet-03      4% ±  0%   33% ±  1%   72% ±  1%
 ```
 
 Uncertainties are based on a [normal approximation](https://alexgude.com/blog/fate-dice-intervals/). 
@@ -78,6 +72,14 @@ To look at a different list, create a new file under `decks/` and put your list 
 
 The function should create game state clones as needed, and move cards between zones per the instructions on the card. See the existing functions for examples. If you try to use a card but forget to enter a function, the model will tell you what's missing.
 
+The `--debug` flag can be used for validation. For example, 
+
+```
+$ ./amulet.py amulet-02 --debug "Oath of Nissa"
+```
+
+Will run `amulet-02` on loop until it finds a hand that makes use of Oath of Nissa. 
+
 # TODO
 
 Add verbose logging to keep track of the complete lines from many games. Would be good to have the ability to grep through them to see (for example) what the best turn one play tends to be. 
@@ -87,3 +89,7 @@ Add handling for Vesuva.
 Add handling for Cavern of Souls.
 
 Update the output for hands with no solution to be CSV. We also want to know play/draw data for those games. 
+
+Update command line to accept globs. 
+
+Update the driver and/or library names. Annoying that we can't tab-complete. Also this doesn't just do Amulet anymore. 

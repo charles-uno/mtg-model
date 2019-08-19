@@ -216,9 +216,8 @@ class GameState(basestate.BaseState):
         return [self]
 
     def cast_sakura_tribe_elder(self):
-        cards = {x for x in set(self.deck) if carddata.is_basic_land(x)}
         clones = []
-        for card in cards:
+        for card in carddata.basic_lands(self.deck):
             clone = self.clone()
             clone.lines[-1] += ", grab " + carddata.display(card)
             clone.hand.append(card)
@@ -227,14 +226,33 @@ class GameState(basestate.BaseState):
         return clones
 
     def cast_search_for_tomorrow(self):
-        cards = {x for x in set(self.deck) if carddata.is_basic_land(x)}
         clones = []
-        for card in cards:
+        for card in carddata.basic_lands(self.deck):
             clone = self.clone()
             clone.lines[-1] += ", grab " + carddata.display(card)
             clone.hand.append(card)
             clone.play_untapped(card)
             clones.append(clone)
+        return clones
+
+    def cast_silhana_wayfinder(self):
+        # Put everything on the bottom, create a new card for the hand
+        cards = carddata.creatures(self.deck[:4]) | carddata.lands(self.deck[:4])
+        self.deck = self.deck[4:] + self.deck[:4]
+        if not cards:
+            clone = self.clone()
+            clone.lines[-1] += ", whiff"
+            return [clone]
+        clones = []
+        for c in cards:
+            clone = self.clone()
+            clone.lines[-1] += ", take " + carddata.display(c)
+            clone.deck = [c] + clone.deck
+            clones.append(clone)
+        # We can choose not to put anything on top.
+        clone = self.clone()
+        clone.lines[-1] += ", pass on " + carddata.display(*cards)
+        clones.append(clone)
         return clones
 
     def cast_simian_spirit_guide(self):

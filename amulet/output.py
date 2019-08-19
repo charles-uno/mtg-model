@@ -3,7 +3,7 @@ import math
 import os
 
 
-def print_summary(names):
+def print_stats(names):
     if not names:
         names = sorted(x.split(".")[0] for x in os.listdir("decks"))
     namewidth = max(len(x) for x in names) + 1

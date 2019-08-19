@@ -69,12 +69,6 @@ class BaseState(object):
             str(self.turn),
         ])
 
-    def __str__(self):
-        return (
-            "HAND: " + carddata.display(*self.hand) + "\n" +
-            "BOARD: " + carddata.display(*self.board)
-        )
-
     def next_states(self):
         self.test("next_states")
         clones = self.clone_pass()
@@ -259,11 +253,24 @@ class BaseState(object):
     def note(self, *args):
         self.lines.append(" ".join(str(x) for x in args))
 
-    def report(self):
+    def __str__(self):
         if "turn" in self.lines[-1].lower():
             self.lines.pop(-1)
-        [print(x) for x in self.lines]
-        return
+        return "\n".join(self.lines)
+
+    def __contains__(self, card):
+        """See if this game state used a certain card."""
+        if card is None:
+            return False
+        elif card == "":
+            return True
+        log = str(self)
+        look_for = (
+            "Activate " + carddata.display(card),
+            "Cast " + carddata.display(card),
+            "Play " + carddata.display(card),
+        )
+        return any(x in log for x in look_for)
 
     def summary(self):
         # Are we on the play or the draw?

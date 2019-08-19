@@ -56,6 +56,9 @@ Forest:
     cost: "UG"
     color: green
     type: instant
+Island:
+    type: basic,land
+    taps_for: U
 "Khalni Garden":
     display: Garden
     type: land
@@ -115,6 +118,10 @@ Mountain:
     enters_tapped: true
     taps_for: G
     activation_cost: "2"
+"Silhana Wayfinder":
+    type: creature
+    color: green
+    cost: "1G"
 "Simian Spirit Guide":
     type: creature
     display: SSG
