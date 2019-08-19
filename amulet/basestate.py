@@ -188,9 +188,9 @@ class BaseState(object):
 
     def clone_cast(self, card):
         self.test("clone_cast", card)
-        if card in self.hand and self.can_pay(carddata.get_cost(card)):
+        if card in self.hand and self.can_pay(carddata.cost(card)):
             clones = []
-            for clone in self.clone_pay(carddata.get_cost(card)):
+            for clone in self.clone_pay(carddata.cost(card)):
                 clone.note("Cast", carddata.display(card))
                 clone.hand.remove(card)
                 clones += getattr(clone, "cast_" + carddata.slug(card))()
@@ -200,9 +200,9 @@ class BaseState(object):
 
     def clone_activate(self, card):
         self.test("clone_activate", card)
-        if card in self.hand and self.can_pay(carddata.get_activation_cost(card)):
+        if card in self.hand and self.can_pay(carddata.activation_cost(card)):
             clones = []
-            for clone in self.clone_pay(carddata.get_activation_cost(card)):
+            for clone in self.clone_pay(carddata.activation_cost(card)):
                 clone.note("Activate", carddata.display(card))
                 clone.hand.remove(card)
                 clones += getattr(clone, "activate_" + carddata.slug(card))()

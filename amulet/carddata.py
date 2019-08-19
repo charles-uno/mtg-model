@@ -9,20 +9,36 @@ with open("carddata.yaml") as handle:
     CARDS = yaml.safe_load(handle)
 
 
-def get_types(card):
-    try:
-        return CARDS[card]["type"].split(",")
-    except KeyError:
-        print("Missing types for:", card)
-        sys.exit(1)
+def basic_lands(cards):
+    return {x for x in set(cards) if is_basic_land(x)}
+
+
+def lands(cards):
+    return {x for x in set(cards) if is_land(x)}
+
+
+def creatures(cards):
+    return {x for x in set(cards) if is_creature(x)}
+
+
+def green_creatures(cards):
+    return {x for x in set(cards) if is_green(x) and is_creature(x)}
+
+
+def permanents(cards):
+    return {x for x in set(cards) if is_permanent(x)}
+
+
+def colorless(cards):
+    return {x for x in set(cards) if is_colorless(x)}
 
 
 def is_artifact(card):
-    return "artifact" in get_types(card)
+    return "artifact" in types(card)
 
 
 def is_basic_land(card):
-    return "basic" in get_types(card) and "land" in get_types(card)
+    return "basic" in types(card) and "land" in types(card)
 
 
 def is_colorless(card):
@@ -30,7 +46,7 @@ def is_colorless(card):
 
 
 def is_creature(card):
-    return "creature" in get_types(card)
+    return "creature" in types(card)
 
 
 def is_green(card):
@@ -38,30 +54,37 @@ def is_green(card):
 
 
 def is_land(card):
-    return "land" in get_types(card)
+    return "land" in types(card)
 
 
 def is_permanent(card):
     permanents = ("artifact", "creature", "enchantment", "land")
-    return any(x in get_types(card) for x in permanents)
+    return any(x in types(card) for x in permanents)
 
 
-def get_activation_cost(card):
+def activation_cost(card):
     cost = CARDS[card].get("activation_cost")
     return cost if cost is None else mana.Mana(cost)
 
 
-def get_cost(card):
+def cost(card):
     cost = CARDS[card].get("cost")
     return cost if cost is None else mana.Mana(cost)
 
 
-def get_cmc(card):
-    cost = get_cost(card)
-    if cost is None:
+def cmc(card):
+    if cost(card) is None:
         return 0
     else:
-        return cost.total
+        return cost(card).total
+
+
+def types(card):
+    try:
+        return CARDS[card]["type"].split(",")
+    except KeyError:
+        print("Missing types for:", card)
+        sys.exit(1)
 
 
 def taps_for(card):

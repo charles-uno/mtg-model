@@ -1,5 +1,5 @@
 """
-We keep track of graan, blue, and total/other. This means we potentially
+We keep track of green, blue, and total/other. This means we potentially
 have to look at multiple ways to pay each cost.
 """
 

@@ -39,7 +39,9 @@ To get a bunch of data for a specific deck, use:
 
 This will run the list `decks/amulet-03.in` for a thousand games and store the results in `out/amulet-03.out`. it'll also print the line-by-line choices for the final game it solves.
 
-To see a summary of the data stored in all output file, run with no arguments:
+# Results
+
+The result of each run gets stored in `data/DECKNAME.csv`. It keeps track of what turn Titan hit the table, play/draw, and whether it's a "fast" Titan via Amulet of Vigor or Through the Breach. To see a summary of that data, run with no arguments:
 
 ```
 ./amulet.py
@@ -75,3 +77,13 @@ To look at a different list, create a new file under `decks/` and put your list 
 - For anything with an additional mode (such as cycling on Shefet Monitor, transmute on Tolaria West, suspend on Search for Tomorrow), create the function `activate_foo(self)`
 
 The function should create game state clones as needed, and move cards between zones per the instructions on the card. See the existing functions for examples. If you try to use a card but forget to enter a function, the model will tell you what's missing.
+
+# TODO
+
+Add verbose logging to keep track of the complete lines from many games. Would be good to have the ability to grep through them to see (for example) what the best turn one play tends to be. 
+
+Add handling for Vesuva.
+
+Add handling for Cavern of Souls.
+
+Update the output for hands with no solution to be CSV. We also want to know play/draw data for those games. 

@@ -39,7 +39,7 @@ class GameState(basestate.BaseState):
         return [self]
 
     def play_lotus_field(self):
-        lands = {c for c in self.board if carddata.is_land(c)}
+        lands = [c for c in self.board if carddata.is_land(c)]
         clones = []
         if len(lands) < 2:
             self.lines[-1] += ", lose " + " and ".join(carddata.display(c) for c in self.board)
@@ -89,7 +89,7 @@ class GameState(basestate.BaseState):
         cards = self.deck[:5]
         # Put everything on the bottom, create a new card for the hand
         self.deck = self.deck[5:] + cards
-        cards = {c for c in cards if carddata.is_colorless(c)}
+        cards = carddata.colorless(cards)
         if not cards:
             clone = self.clone()
             clone.lines[-1] += ", whiff"
@@ -103,7 +103,7 @@ class GameState(basestate.BaseState):
         return clones
 
     def cast_arboreal_grazer(self):
-        lands = {c for c in self.hand if carddata.is_land(c)}
+        lands = carddata.lands(self.hand)
         if not lands:
             self.lines[-1] += ", whiff"
             return [self]
@@ -124,7 +124,7 @@ class GameState(basestate.BaseState):
         cards = self.deck[:3]
         # Put everything on the bottom, create a new card for the hand
         self.deck = self.deck[3:] + cards
-        cards = {c for c in cards if carddata.is_permanent(c)}
+        cards = carddata.permanents(cards)
         if not cards:
             clone = self.clone()
             clone.lines[-1] += ", whiff"
@@ -142,10 +142,9 @@ class GameState(basestate.BaseState):
         return [self]
 
     def cast_elvish_rejuvenator(self):
-        cards = self.deck[:5]
         # Put everything on the bottom, create a new card for the hand
-        self.deck = self.deck[5:] + cards
-        cards = {c for c in cards if carddata.is_land(c)}
+        cards = carddata.lands(self.deck[:5])
+        self.deck = self.deck[5:] + self.deck[:5]
         if not cards:
             clone = self.clone()
             clone.lines[-1] += ", whiff"
@@ -182,10 +181,9 @@ class GameState(basestate.BaseState):
         return clones
 
     def cast_oath_of_nissa(self):
-        cards = self.deck[:3]
         # Put everything on the bottom, create a new card for the hand
-        self.deck = self.deck[3:] + cards
-        cards = {c for c in cards if carddata.is_creature(c) or carddata.is_land(c)}
+        cards = carddata.creatures(self.deck[:3]) | carddata.lands(self.deck[:3])
+        self.deck = self.deck[3:] + self.deck[:3]
         if not cards:
             clone = self.clone()
             clone.lines[-1] += ", whiff"
@@ -265,7 +263,7 @@ class GameState(basestate.BaseState):
     def cast_trinket_mage(self):
         clones = []
         for card in set(self.deck):
-            if not carddata.is_artifact(card) or carddata.get_cmc(card) > 1:
+            if not carddata.is_artifact(card) or carddata.cmc(card) > 1:
                 continue
             clone = self.clone()
             clone.lines[-1] += ", grab " + carddata.display(card)
@@ -291,7 +289,7 @@ class GameState(basestate.BaseState):
     def activate_tolaria_west(self):
         clones = []
         for card in set(self.deck):
-            if carddata.get_cmc(card) != 0:
+            if carddata.cmc(card) != 0:
                 continue
             clone = self.clone()
             clone.lines[-1] += ", grab " + carddata.display(card)
