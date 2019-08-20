@@ -37,10 +37,20 @@ Blank:
 Cantrip:
     cost: "1"
     type: sorcery
+"Charge Counter":
+    type: artifact
+    taps_for: "G,U"
 "Chromatic Star":
     type: artifact
     cost: "1"
     activation_cost: "1"
+"Coalition Relic":
+    type: artifact
+    cost: "3"
+    activation_cost: "0"
+    taps_for: "G,U"
+"Coalition Relic^":
+    type: artifact
 "Elvish Rejuvenator":
     cost: "2G"
     type: creature

@@ -82,6 +82,7 @@ class BaseState(object):
         self.test("clone_pass")
         clone = self.clone("---- turn", self.turn+1)
         clone.turn += 1
+        clone.untap_everything()
         if "Azusa, Lost but Seeking" in self.board:
             clone.drops = 3
         else:
@@ -109,6 +110,10 @@ class BaseState(object):
                 clone.draw(1)
         return clones
 
+    def untap_everything(self):
+        """A few things have to be tapped/untapped explicitly"""
+        self.board = [x.rstrip("^") for x in self.board]
+
     def handle_suspend(self):
         for card in self.suspend:
             if card.count(".") > 1:
@@ -121,7 +126,7 @@ class BaseState(object):
         for card in to_resolve:
             new_clones = []
             for clone in clones:
-                clone.note(", cast", carddata.display(card), "from exile")
+                clone.note(", cast", carddata.display(card), "from suspend")
                 new_clones += getattr(clone, "cast_" + carddata.slug(card))()
             clones = new_clones
         return clones

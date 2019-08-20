@@ -84,6 +84,8 @@ Will run `amulet-02` on loop until it finds a hand that makes use of Oath of Nis
 
 Parallelism! We're not using any shared variables so multiprocessing would be fine
 
+Make `GameState` objects immutable. This is important since we store them in sets. A bit confusing that sometimes a function makes a local change and other times it returns a list of new states. We'll probably take a performance hit, but it'll make the model conceptually much cleaner. 
+
 Add verbose logging to keep track of the complete lines from many games. Would be good to have the ability to grep through them to see (for example) what the best turn one play tends to be.
 
 Add handling for Vesuva.

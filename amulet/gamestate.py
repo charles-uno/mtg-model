@@ -123,8 +123,15 @@ class GameState(basestate.BaseState):
         self.draw(1)
         return [self]
 
+    def cast_charge_counter(self):
+        return self.clone_tap("Charge Counter")
+
     def cast_chromatic_star(self):
         self.board.append("Chromatic Star")
+        return [self]
+
+    def cast_coalition_relic(self):
+        self.board.append("Coalition Relic")
         return [self]
 
     def cast_elvish_rejuvenator(self):
@@ -240,6 +247,21 @@ class GameState(basestate.BaseState):
             clone.note_pool(m)
             clone.draw(1)
             clones.append(clone)
+        return clones
+
+    def activate_coalition_relic(self):
+        if "Coalition Relic" not in self.board:
+            return []
+        # We have to handle this differently from a land because it
+        # doesn't always tap for mana
+        self.board.append("Coalition Relic^")
+        self.board.remove("Coalition Relic")
+        clones = self.clone_tap("Coalition Relic")
+        [x.note_pool() for x in clones]
+        # Also allow charging. We can suspend a treasure
+        clone = self.clone(", charging")
+        clone.suspend.append("Charge Counter.")
+        clones.append(clone)
         return clones
 
     def activate_expedition_map(self):
