@@ -98,18 +98,14 @@ class GameState(basestate.BaseState):
         clones = []
         for card in carddata.colorless(self.tuck(5)):
             clones.append(self.clone_grab(card))
-        if not clones:
-            clones.append(self.clone(", whiff"))
-        return clones
+        return clones or [self.clone(", whiff")]
 
     def cast_arboreal_grazer(self):
         clones = []
         for card in carddata.lands(self.hand):
             clone = self.clone(", play", carddata.display(card))
             clones += clone.play_tapped(card)
-        if not clones:
-            clones.append(self.clone(", whiff"))
-        return clones
+        return clones or [self.clone(", whiff")]
 
     def cast_azusa_lost_but_seeking(self):
         if "Azusa, Lost but Seeking" not in self.board:
@@ -121,9 +117,7 @@ class GameState(basestate.BaseState):
         clones = []
         for card in carddata.permanents(self.tuck(3)):
             clones.append(self.clone_grab(card))
-        if not clones:
-            clones.append(self.clone(", whiff"))
-        return clones
+        return clones or [self.clone(", whiff")]
 
     def cast_cantrip(self):
         self.draw(1)
@@ -138,10 +132,7 @@ class GameState(basestate.BaseState):
         for card in carddata.lands(self.tuck(5)):
             clone = self.clone_grab(card)
             clones += clone.play_tapped(card)
-        if not clones:
-            clone = self.clone(", whiff")
-            clones.append(clone)
-        return clones
+        return clones or [self.clone(", whiff")]
 
     def cast_expedition_map(self):
         self.board.append("Expedition Map")
@@ -170,9 +161,7 @@ class GameState(basestate.BaseState):
         clones = []
         for card in carddata.creatures_lands(self.tuck(3)):
             clones.append(self.clone_grab(card))
-        if not clones:
-            clones.append(self.clone(", whiff"))
-        return clones
+        return clones or [self.clone(", whiff")]
 
     def cast_opt(self):
         clones = self.clone_scry(1)
@@ -207,10 +196,8 @@ class GameState(basestate.BaseState):
             clone = self.clone(", take", carddata.display(card))
             clone.deck = [card] + clone.deck
             clones.append(clone)
-        if not clones:
-            clones.append(self.clone(", whiff"))
         # TODO: we can choose not to put anything on top.
-        return clones
+        return clones or [self.clone(", whiff")]
 
     def cast_simian_spirit_guide(self):
         return [self]
@@ -268,6 +255,13 @@ class GameState(basestate.BaseState):
     def activate_search_for_tomorrow(self):
         self.suspend.append("Search for Tomorrow..")
         return [self]
+
+    def activate_shefet_monitor(self):
+        for card in carddata.basic_lands(self.deck):
+            clone = self.clone_grab(card)
+            clones += clone.play_untapped(card)
+        [x.draw(1) for x in clones]
+        return clones
 
     def activate_sheltered_thicket(self):
         self.draw(1)

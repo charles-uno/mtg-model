@@ -121,6 +121,10 @@ Mountain:
     display: GW
     taps_for: "1G"
     enters_tapped: true
+"Shefet Monitor":
+    activation_cost: "3G"
+    type: creature
+    color: green
 "Sheltered Thicket":
     type: land
     enters_tapped: true
