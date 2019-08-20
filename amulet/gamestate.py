@@ -279,6 +279,7 @@ class GameState(basestate.BaseState):
         return [self]
 
     def activate_shefet_monitor(self):
+        clones = []
         for card in carddata.basic_lands(self.deck):
             clone = self.clone_grab(card)
             clones += clone.play_untapped(card)
