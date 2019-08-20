@@ -51,7 +51,7 @@ amulet-02      2% ±  0%   30% ±  1%   67% ±  1%
 amulet-03      4% ±  0%   33% ±  1%   72% ±  1%
 ```
 
-Uncertainties are based on a [normal approximation](https://alexgude.com/blog/fate-dice-intervals/). 
+Uncertainties are based on a [normal approximation](https://alexgude.com/blog/fate-dice-intervals/).
 
 # Implementation
 
@@ -72,24 +72,26 @@ To look at a different list, create a new file under `decks/` and put your list 
 
 The function should create game state clones as needed, and move cards between zones per the instructions on the card. See the existing functions for examples. If you try to use a card but forget to enter a function, the model will tell you what's missing.
 
-The `--debug` flag can be used for validation. For example, 
+The `--debug` flag can be used for validation. For example,
 
 ```
 $ ./amulet.py amulet-02 --debug "Oath of Nissa"
 ```
 
-Will run `amulet-02` on loop until it finds a hand that makes use of Oath of Nissa. 
+Will run `amulet-02` on loop until it finds a hand that makes use of Oath of Nissa.
 
 # TODO
 
-Add verbose logging to keep track of the complete lines from many games. Would be good to have the ability to grep through them to see (for example) what the best turn one play tends to be. 
+Parallelism! We're not using any shared variables so multiprocessing would be fine
+
+Add verbose logging to keep track of the complete lines from many games. Would be good to have the ability to grep through them to see (for example) what the best turn one play tends to be.
 
 Add handling for Vesuva.
 
 Add handling for Cavern of Souls.
 
-Update the output for hands with no solution to be CSV. We also want to know play/draw data for those games. 
+Update the output for hands with no solution to be CSV. We also want to know play/draw data for those games.
 
-Update command line to accept globs. 
+Update command line to accept globs.
 
-Update the driver and/or library names. Annoying that we can't tab-complete. Also this doesn't just do Amulet anymore. 
+Update the driver and/or library names. Annoying that we can't tab-complete. Also this doesn't just do Amulet anymore.

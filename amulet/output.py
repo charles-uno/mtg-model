@@ -26,7 +26,7 @@ def print_stats(names):
         n = 0
         for t in turns:
             n += tally[t]
-            line += "   " + pcts(n, total)
+            line += "   " + pcts(n, total, z=2)
         print(line)
 
 

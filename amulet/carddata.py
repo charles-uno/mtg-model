@@ -21,6 +21,10 @@ def creatures(cards):
     return {x for x in set(cards) if is_creature(x)}
 
 
+def creatures_lands(cards):
+    return {x for x in set(cards) if is_creature(x) or is_land(x)}
+
+
 def green_creatures(cards):
     return {x for x in set(cards) if is_green(x) and is_creature(x)}
 
@@ -31,6 +35,14 @@ def permanents(cards):
 
 def colorless(cards):
     return {x for x in set(cards) if is_colorless(x)}
+
+
+def trinkets(cards):
+    return {x for x in set(cards) if is_artifact(x) and cmc(x) < 2}
+
+
+def zeros(cards):
+    return {x for x in set(cards) if cmc(x) == 0}
 
 
 def is_artifact(card):

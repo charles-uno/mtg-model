@@ -3,7 +3,7 @@ The BaseState object keeps track of base operations: moving cards
 between zones, keeping a log, cloning, etc. It knows as little as
 possible about specific cards or their interactions. That stuff should
 all go in the GameState object, which inherits directly from BaseState.
-The difference is cosmetic, really, but it makes the bookkeeping easier. 
+The difference is cosmetic, really, but it makes the bookkeeping easier.
 """
 
 
@@ -99,7 +99,7 @@ class BaseState(object):
         if self.debt:
             new_clones = []
             for clone in clones:
-                clone.lines[-1] += ", pay " + str(clone.debt) + " for pact"
+                clone.note(", pay", clone.debt, "for pact")
                 new_clones += clone.clone_pay(clone.debt)
             clones = new_clones
         # Finish up the start of turn stuff
@@ -112,7 +112,7 @@ class BaseState(object):
     def handle_suspend(self):
         for card in self.suspend:
             if card.count(".") > 1:
-                self.lines[-1] += ", " + carddata.display(card) + " ticking down"
+                self.note(",", carddata.display(card), "ticking down")
         new_suspend = [x.replace(".", "", 1) for x in self.suspend]
         to_resolve = [x for x in new_suspend if "." not in x]
         clone = self.clone()
@@ -121,7 +121,7 @@ class BaseState(object):
         for card in to_resolve:
             new_clones = []
             for clone in clones:
-                clone.lines[-1] += ", cast " + carddata.display(card) + " from exile"
+                clone.note(", cast", carddata.display(card), "from exile")
                 new_clones += getattr(clone, "cast_" + carddata.slug(card))()
             clones = new_clones
         return clones
@@ -244,16 +244,26 @@ class BaseState(object):
             clones.append(clone)
         return clones
 
-    def note_pool(self):
-        self.lines[-1] += ", " + str(self.pool) + " in pool"
+    def note_pool(self, m=None):
+        if m is not None:
+            self.pool += m
+        self.note(",", self.pool, "in pool")
 
     def draw(self, n=1):
         if self.lines:
-            self.lines[-1] += ", draw " + carddata.display(*self.deck[:n])
+            self.note(", draw", carddata.display(*self.deck[:n]))
         else:
             self.note("Draw", carddata.display(*self.deck[:n]))
         self.hand, self.deck = self.hand + self.deck[:n], self.deck[n:]
         return
+
+    def tuck(self, n):
+        """Put the top N cards from the top of the deck onto the bottom.
+        Also return a list of those N cards so we can put one into our
+        hand.
+        """
+        self.deck = self.deck[n:] + self.deck[:n]
+        return self.deck[-n:]
 
     def clone_grab(self, card):
         """Shuffling is a problem. Create a new card instead."""
@@ -266,14 +276,18 @@ class BaseState(object):
         if n > 1:
             raise RuntimeError("Scry > 1 is not yet supported")
         top = self.clone()
-        top.lines[-1] += ", scry " + carddata.display(self.deck[0]) + " to top"
+        top.note(", scry", carddata.display(self.deck[0]), "to top")
         bot = self.clone()
-        bot.lines[-1] += ", scry " + carddata.display(self.deck[0]) + " to bottom"
-        bot.deck = bot.deck[1:] + bot.deck[:1]
+        bot.note(", scry", carddata.display(self.deck[0]), "to bottom")
+        bot.tuck(1)
         return top, bot
 
     def note(self, *args):
-        self.lines.append(" ".join(str(x) for x in args))
+        text = " ".join(str(x) for x in args)
+        if text.startswith(","):
+            self.lines[-1] += text
+        else:
+            self.lines.append(text)
 
     def __str__(self):
         if "turn" in self.lines[-1].lower():

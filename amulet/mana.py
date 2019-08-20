@@ -26,6 +26,8 @@ class Mana(object):
 
     def __add__(self, other):
         m = Mana()
+        if isinstance(other, str):
+            other = Mana(other)
         m.total = self.total + other.total
         m.green = self.green + other.green
         m.blue = self.blue + other.blue
