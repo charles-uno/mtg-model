@@ -1,6 +1,6 @@
 """
 The GameState object is where functions should be defined to handle the
-behaviors of specific carddata. For example, in order to cast Ancient
+behaviors of specific cards. For example, in order to cast Ancient
 Stirrings, we need a function called cast_ancient_stirrings. It returns
 a list of clones -- all possible game states at the end of the spell's
 resolution. Similarly, a function play_simic_growth_chamber is needed to
