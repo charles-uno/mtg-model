@@ -19,7 +19,6 @@ def print_stats(names):
     for t in turns:
         header += "   " + ("turn %d" % t).rjust(colwidth)
     header += "  |   overflow"
-
     print(header)
     for name in names:
         lines = read(outfile(name))
@@ -58,8 +57,9 @@ def pcts(m, n, z=1):
     """Use a normal approximation to see what range of probabilities
     we're looking at based on the number of trials and the number of
     hits. One standard deviation by default.
-    M = NP +- z*sqrt( NP*(1-P) ) so...
-    P = (Nzz + 2MN) +- sqrt( (Nzz + 2MN)**2 - 4MM(NN+zzN) )/2*(NN+zzN)
+    M = NP +- z sqrt((1-P)NP)
+    Turn this inside out and we get a quadratic in P:
+    0 = (NN + zzN)PP + (-zzN - 2MN)P + (NN + zzN)
     """
     a = float(n*n + z*z*n)
     b = float(-z*z*n - 2*m*n)

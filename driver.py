@@ -46,8 +46,10 @@ def parse_args():
     parser.add_argument(
         "-d",
         "--debug",
-        action="store_true",
-        help="Run until we find a hand that works, then print it out",
+        default=None,
+        nargs="?",
+        const="",
+        help="Run until we find a hand that works, then print it out. If given a card name, keep going until we see a line that uses this card",
     )
     parser.add_argument(
         "-n",

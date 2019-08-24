@@ -68,6 +68,29 @@ class GameStates(set):
             return state.performance
 
     @property
+    def done(self):
+        for state in self:
+            return state.turn
+
+    def uses(self, card):
+        """Check if the solution we found uses the given card."""
+        if card is None:
+            return False
+        else:
+            for state in self:
+                look_for = (
+                    "Discard " + helpers.pretty(card),
+                    "Cast " + helpers.pretty(card),
+                    "Play " + helpers.pretty(card),
+                )
+                return any(x in state.notes for x in look_for)
+
+    @property
+    def notes(self):
+        for state in states:
+            return state.notes
+
+    @property
     def turn(self):
         for state in self:
             return state.turn
@@ -81,6 +104,12 @@ class GameStates(set):
                     return GameStates([_state])
                 new_states.add(_state)
                 if N_STATES > MAX_STATES:
+
+                    # Dump the state with the longest notes. This might
+                    # give us a sense of what overflow states look like.
+                    max((len(x.notes), x) for x in new_states)[-1].report()
+
+
                     raise TooManyStates
         return new_states
 
@@ -126,14 +155,7 @@ class GameState(GameStateBase):
         new_kwargs = GAME_STATE_DEFAULTS.copy()
         new_kwargs.update(kwargs)
         values = [v for k, v in sorted(new_kwargs.items())]
-        inst = GameStateBase.__new__(cls, *values)
-
-
-        if N_STATES == MAX_STATES:
-            inst.report()
-
-        return inst
-
+        return GameStateBase.__new__(cls, *values)
 
     def __hash__(self):
         """Ignore notes when collapsing duplicates."""
@@ -167,7 +189,7 @@ class GameState(GameStateBase):
         clones = self.pass_turn()
         for card in set(self.hand):
             clones |= self.cast(card)
-            clones |= self.discard(card)
+            clones |= self.cycle(card)
             clones |= self.play(card)
         return clones
 
@@ -218,20 +240,23 @@ class GameState(GameStateBase):
 
     def bounce_land(self):
         clones = GameStates()
-        for card in carddata.lands(self.battlefield):
-            if card in self.battlefield_tapped:
-                clone = self.clone(
-                    notes=self.notes + ", bounce " + helpers.pretty(card),
-                    battlefield_tapped=helpers.tup_sub(self.battlefield_tapped, card),
-                    hand=helpers.tup_add(self.hand, card),
-                )
-            else:
-                clone = self.clone(
-                    notes=self.notes + ", bounce " + helpers.pretty(card),
-                    battlefield_untapped=helpers.tup_sub(self.battlefield_untapped, card),
-                    hand=helpers.tup_add(self.hand, card),
-                )
-            clones.add(clone)
+        # For fetching and cantrips, some lands are better than others.
+        # Choices for what to bounce are trickier.
+        for card in carddata.lands(self.battlefield_tapped):
+            clones |= self.clones(
+                notes=self.notes + ", bounce " + helpers.pretty(card),
+                battlefield_tapped=helpers.tup_sub(self.battlefield_tapped, card),
+                hand=helpers.tup_add(self.hand, card),
+            )
+        # If we have two copies of the same land, one tapped and one
+        # untapped, we always want to bounce the tapped one.
+        cards = set(self.battlefield_untapped) - set(self.battlefield_tapped)
+        for card in carddata.lands(cards):
+            clones |= self.clones(
+                notes=self.notes + ", bounce " + helpers.pretty(card),
+                battlefield_untapped=helpers.tup_sub(self.battlefield_untapped, card),
+                hand=helpers.tup_add(self.hand, card),
+            )
         return clones
 
     def cast(self, card):
@@ -242,17 +267,22 @@ class GameState(GameStateBase):
             hand=helpers.tup_sub(self.hand, card),
             notes=self.notes + "\nCast " + helpers.pretty(card),
         ).pay(cost)
-        return clones.safe_getattr("cast_" + helpers.slug(card))
+        # Don't use the safety wrapper. If casting is a no-op, we
+        # shouldn't be casting. And something is probably wrong.
+        try:
+            return getattr(clones, "cast_" + helpers.slug(card))()
+        except Exception:
+            raise RuntimeError("Problem casting " + card)
 
-    def discard(self, card):
-        cost = carddata.discard_cost(card)
+    def cycle(self, card):
+        cost = carddata.cycle_cost(card)
         if card not in self.hand or cost is None or not self.mana_pool >= cost:
             return GameStates()
         clones = self.clone(
             hand=helpers.tup_sub(self.hand, card),
             notes=self.notes + "\nDiscard " + helpers.pretty(card),
         ).pay(cost)
-        return clones.safe_getattr("discard_" + helpers.slug(card))
+        return clones.safe_getattr("cycle_" + helpers.slug(card))
 
     def draw(self, n=1):
         cards = self.top(n)
@@ -291,7 +321,9 @@ class GameState(GameStateBase):
         if self.turn < 2 and self.mana_debt:
             return GameStates()
         mana_debt = self.mana_debt
-        land_drops = 3 if "Azusa, Lost but Seeking" in self.battlefield else 1
+        land_drops = 1 + self.battlefield.count("Sakura-Tribe Scout")
+        if "Azusa, Lost but Seeking" in self.battlefield:
+            land_drops += 2
         clones = self.clones(
             battlefield_tapped=(),
             battlefield_untapped=helpers.tup(self.battlefield_tapped + self.battlefield_untapped),
@@ -302,7 +334,7 @@ class GameState(GameStateBase):
             turn=self.turn+1,
         ).tap_out()
         if mana_debt:
-            clones = clones.pay(mana_debt, note=", pay" + str(mana_debt) + "for pact")
+            clones = clones.pay(mana_debt, note=", pay " + str(mana_debt) + "for pact")
         if self.on_the_play and self.turn == 0:
             return clones
         else:
@@ -422,7 +454,7 @@ class GameState(GameStateBase):
 
     def cast_ancient_stirrings(self):
         clones = GameStates()
-        for card in carddata.colorless(self.top(5)):
+        for card in carddata.colorless(self.top(5), best=True):
             clones |= self.grab(card, mill=5)
         return clones or self.grab(mill=5, note=", whiff")
 
@@ -443,7 +475,7 @@ class GameState(GameStateBase):
 
     def cast_bond_of_flourishing(self):
         clones = GameStates()
-        for card in carddata.permanent(self.top(3)):
+        for card in carddata.permanent(self.top(3), best=True):
             clones |= self.grab(card, mill=3)
         return clones or self.grab(mill=3, note=", whiff")
 
@@ -452,16 +484,21 @@ class GameState(GameStateBase):
 
     def cast_oath_of_nissa(self):
         clones = GameStates()
-        for card in carddata.creature_land(self.top(3)):
+        for card in carddata.creature_land(self.top(3), best=True):
             clones |= self.grab(card, mill=3)
         return clones or self.grab(mill=3, note=", whiff")
 
     def cast_primeval_titan(self):
         return self.clones(done=True)
 
+    def cast_sakura_tribe_scout(self):
+        return self.clones(
+            battlefield_tapped=helpers.tup_add(self.battlefield_tapped, "Sakura-Tribe Scout"),
+        )
+
     def cast_summoners_pact(self):
         clones = GameStates()
-        for card in carddata.green_creatures(self.deck_list):
+        for card in carddata.green_creatures(self.deck_list, best=True):
             # You never need to Pact for a card that's in your hand.
             # Even if you need multiple Grazers, you can grab the second
             # after you play the first.
@@ -472,9 +509,9 @@ class GameState(GameStateBase):
             clones |= self.grab(card)
         return clones.clones(mana_debt=self.mana_debt + Mana("2GG"))
 
-    def discard_tolaria_west(self):
+    def cycle_tolaria_west(self):
         clones = GameStates()
-        for card in carddata.zeros(self.deck_list):
+        for card in carddata.zeros(self.deck_list, best=True):
             clones |= self.grab(card)
         return clones
 

@@ -116,21 +116,21 @@ Mountain:
     display: Search
     cost: "2G"
     type: sorcery
-    discard_cost: "G"
+    cycle_cost: "G"
 "Selesnya Sanctuary":
     type: land
     display: GW
     taps_for: "1G"
     enters_tapped: true
 "Shefet Monitor":
-    discard_cost: "3G"
+    cycle_cost: "3G"
     type: creature
     color: green
 "Sheltered Thicket":
     type: land
     enters_tapped: true
     taps_for: G
-    discard_cost: "2"
+    cycle_cost: "2"
 "Silhana Wayfinder":
     type: creature
     color: green
@@ -139,7 +139,7 @@ Mountain:
     type: creature
     display: SSG
     color: red
-    discard_cost: "0"
+    cycle_cost: "0"
 "Simic Growth Chamber":
     display: GU
     type: land
@@ -170,12 +170,12 @@ Mountain:
     type: land
     taps_for: U
     enters_tapped: true
-    discard_cost: 1UU
+    cycle_cost: 1UU
 "Tranquil Thicket":
     type: land
     taps_for: G
     enters_tapped: true
-    discard_cost: G
+    cycle_cost: G
 "Trinket Mage":
     cost: "2U"
     type: creature
