@@ -3,6 +3,12 @@ import math
 import os
 
 
+def save(name, summary):
+    os.makedirs(os.path.dirname(outfile(name)), exist_ok=True)
+    with open(outfile(name), "a") as handle:
+        handle.write(summary + "\n")
+
+
 def print_stats(names):
     if not names:
         names = sorted(x.split(".")[0] for x in os.listdir("decks"))
@@ -12,9 +18,11 @@ def print_stats(names):
     header = "name".ljust(namewidth)
     for t in turns:
         header += "   " + ("turn %d" % t).rjust(colwidth)
+    header += "  |   overflow"
+
     print(header)
     for name in names:
-        lines = read("data/%s.csv" % name)
+        lines = read(outfile(name))
         total = max(len(lines), 1)
         tally = collections.defaultdict(int)
         for line in lines:
@@ -27,7 +35,15 @@ def print_stats(names):
         for t in turns:
             n += tally[t]
             line += "   " + pcts(n, total, z=2)
+
+        overflows = sum(1 for x in lines if x.endswith("1"))
+        line += "  |  " + pcts(overflows, total, z=2)
+
         print(line)
+
+
+def outfile(name):
+    return "output/%s.csv" % name
 
 
 def read(path):

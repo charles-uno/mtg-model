@@ -20,6 +20,7 @@
 Blank:
     cost: null
     type: ""
+    color: red
 "Bojuka Bog":
     type: land
     taps_for: "1"
@@ -34,23 +35,13 @@ Blank:
     enters_tapped: true
     taps_for: "2"
     type: land
-Cantrip:
-    cost: "1"
-    type: sorcery
 "Charge Counter":
     type: artifact
     taps_for: "G,U"
 "Chromatic Star":
     type: artifact
     cost: "1"
-    activation_cost: "1"
-"Coalition Relic":
-    type: artifact
-    cost: "3"
-    activation_cost: "0"
-    taps_for: "G,U"
-"Coalition Relic^":
-    type: artifact
+    sacrifice_cost: "1"
 "Elvish Rejuvenator":
     cost: "2G"
     type: creature
@@ -58,7 +49,7 @@ Cantrip:
 "Expedition Map":
     type: artifact
     cost: "1"
-    activation_cost: "2"
+    sacrifice_cost: "2"
 Explore:
     cost: 1G
     color: green
@@ -125,21 +116,21 @@ Mountain:
     display: Search
     cost: "2G"
     type: sorcery
-    activation_cost: "G"
+    discard_cost: "G"
 "Selesnya Sanctuary":
     type: land
     display: GW
     taps_for: "1G"
     enters_tapped: true
 "Shefet Monitor":
-    activation_cost: "3G"
+    discard_cost: "3G"
     type: creature
     color: green
 "Sheltered Thicket":
     type: land
     enters_tapped: true
     taps_for: G
-    activation_cost: "2"
+    discard_cost: "2"
 "Silhana Wayfinder":
     type: creature
     color: green
@@ -148,7 +139,7 @@ Mountain:
     type: creature
     display: SSG
     color: red
-    activation_cost: "0"
+    discard_cost: "0"
 "Simic Growth Chamber":
     display: GU
     type: land
@@ -179,12 +170,12 @@ Mountain:
     type: land
     taps_for: U
     enters_tapped: true
-    activation_cost: 1UU
+    discard_cost: 1UU
 "Tranquil Thicket":
     type: land
     taps_for: G
     enters_tapped: true
-    activation_cost: G
+    discard_cost: G
 "Trinket Mage":
     cost: "2U"
     type: creature
