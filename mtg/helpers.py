@@ -23,10 +23,10 @@ def rmchars(text, chars):
 def tup(*args, **kwargs):
     return tuple(sorted(*args, **kwargs))
 
-def tup_add(seq, elt):
-    return tup(seq + (elt,))
+def tup_add(seq, *elts):
+    return tup(seq + elts)
 
-def tup_sub(seq, elt):
+def tup_sub(seq, *elts):
     new_seq = list(seq)
-    new_seq.remove(elt)
+    [new_seq.remove(x) for x in elts]
     return tup(new_seq)

@@ -14,12 +14,12 @@ computation time.
 """
 
 import collections
+import itertools
 import time
 
 from . import carddata
 from . import helpers
 from .mana import Mana
-
 
 # ======================================================================
 
@@ -269,10 +269,7 @@ class GameState(GameStateBase):
         ).pay(cost)
         # Don't use the safety wrapper. If casting is a no-op, we
         # shouldn't be casting. And something is probably wrong.
-        try:
-            return getattr(clones, "cast_" + helpers.slug(card))()
-        except Exception:
-            raise RuntimeError("Problem casting " + card)
+        return getattr(clones, "cast_" + helpers.slug(card))()
 
     def cycle(self, card):
         cost = carddata.cycle_cost(card)
@@ -284,7 +281,17 @@ class GameState(GameStateBase):
         ).pay(cost)
         return clones.safe_getattr("cycle_" + helpers.slug(card))
 
-    def draw(self, n=1):
+    def pitch(self, n):
+        """GameStates is a set, so there's already a discard function."""
+        clones = GameStates()
+        for cards in itertools.combinations(self.hand, n):
+            clones |= self.clones(
+                hand=helpers.tup_sub(self.hand, *cards),
+                notes=self.notes + ", discard " + helpers.pretty(*cards),
+            )
+        return clones
+
+    def draw(self, n):
         cards = self.top(n)
         # Opening hand gets its own line
         if not self.notes:
@@ -334,7 +341,7 @@ class GameState(GameStateBase):
             turn=self.turn+1,
         ).tap_out()
         if mana_debt:
-            clones = clones.pay(mana_debt, note=", pay " + str(mana_debt) + "for pact")
+            clones = clones.pay(mana_debt, note=", pay " + str(mana_debt) + " for pact")
         if self.on_the_play and self.turn == 0:
             return clones
         else:
@@ -475,7 +482,7 @@ class GameState(GameStateBase):
 
     def cast_bond_of_flourishing(self):
         clones = GameStates()
-        for card in carddata.permanent(self.top(3), best=True):
+        for card in carddata.permanents(self.top(3), best=True):
             clones |= self.grab(card, mill=3)
         return clones or self.grab(mill=3, note=", whiff")
 
@@ -484,9 +491,15 @@ class GameState(GameStateBase):
 
     def cast_oath_of_nissa(self):
         clones = GameStates()
-        for card in carddata.creature_land(self.top(3), best=True):
+        for card in carddata.creatures_lands(self.top(3), best=True):
             clones |= self.grab(card, mill=3)
         return clones or self.grab(mill=3, note=", whiff")
+
+    def cast_opt(self):
+        clones = GameStates()
+        for i in range(2):
+            clones |= self.grab(card=None, mill=i).draw(1)
+        return clones
 
     def cast_primeval_titan(self):
         return self.clones(done=True)
@@ -508,6 +521,9 @@ class GameState(GameStateBase):
                 continue
             clones |= self.grab(card)
         return clones.clones(mana_debt=self.mana_debt + Mana("2GG"))
+
+    def cast_tragic_lesson(self):
+        return self.draw(2).pitch(1) | self.draw(2).bounce_land()
 
     def cycle_tolaria_west(self):
         clones = GameStates()

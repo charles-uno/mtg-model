@@ -30,7 +30,8 @@ def main():
 
 
 def all_decks():
-    return sorted(x.split(".")[0] for x in os.listdir("decks"))
+    decks = {x.split(".")[0] for x in os.listdir("decks")}
+    return sorted(decks - {"debug"})
 
 
 def parse_args():
