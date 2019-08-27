@@ -78,12 +78,7 @@ class GameStates(set):
             return False
         else:
             for state in self:
-                look_for = (
-                    "Discard " + helpers.pretty(card),
-                    "Cast " + helpers.pretty(card),
-                    "Play " + helpers.pretty(card),
-                )
-                return any(x in state.notes for x in look_for)
+                return helpers.pretty(card, color=False) in state.notes
 
     @property
     def notes(self):
@@ -260,7 +255,7 @@ class GameState(GameStateBase):
             return GameStates()
         states = self.clone(
             hand=helpers.tup_sub(self.hand, card),
-            notes=self.notes + "\nCast " + helpers.pretty(card),
+            notes=self.notes + "\ncast " + helpers.pretty(card),
         ).pay(cost)
         # Don't use the safety wrapper. If casting is a no-op, we
         # shouldn't be casting. And something is probably wrong.
@@ -272,31 +267,15 @@ class GameState(GameStateBase):
             return GameStates()
         states = self.clone(
             hand=helpers.tup_sub(self.hand, card),
-            notes=self.notes + "\nDiscard " + helpers.pretty(card),
+            notes=self.notes + "\ndiscard " + helpers.pretty(card),
         ).pay(cost)
         return states.safe_getattr("cycle_" + helpers.slug(card))
 
-    def pitch(self, n):
-        """GameStates is a set, so there's already a discard function."""
-        states = GameStates()
-        for cards in itertools.combinations(self.hand, n):
-            states |= self.clone(
-                hand=helpers.tup_sub(self.hand, *cards),
-                notes=self.notes + ", discard " + helpers.pretty(*cards),
-            )
-        return states
-
     def draw(self, n):
-        cards = self.top(n)
-        # Opening hand gets its own line
-        if not self.notes:
-            notes = "\nDraw " + helpers.pretty(*cards)
-        else:
-            notes = ", draw " + helpers.pretty(*cards)
         return self.clone(
             deck_index=self.deck_index + n,
-            hand=tuple(sorted(self.hand + cards)),
-            notes=self.notes + notes,
+            hand=helpers.tup_add(self.hand, *self.top(n)),
+            notes=self.notes + ", draw " + helpers.pretty(*self.top(n)),
         )
 
     def grab(self, card=None, mill=0, note=None):
@@ -351,11 +330,21 @@ class GameState(GameStateBase):
             )
         return states
 
+    def pitch(self, n):
+        """GameStates is a set, so there's already a discard function."""
+        states = GameStates()
+        for cards in itertools.combinations(self.hand, n):
+            states |= self.clone(
+                hand=helpers.tup_sub(self.hand, *cards),
+                notes=self.notes + ", discard " + helpers.pretty(*cards),
+            )
+        return states
+
     def play(self, card):
         if not self.land_drops or not carddata.is_land(card) or not card in self.hand:
             return GameStates()
         states = self.clone(
-            notes=self.notes + "\nPlay " + helpers.pretty(card),
+            notes=self.notes + "\nplay " + helpers.pretty(card),
             land_drops=self.land_drops - 1,
         )
         if carddata.enters_tapped(card):
@@ -381,9 +370,12 @@ class GameState(GameStateBase):
         return states.safe_getattr("play_" + helpers.slug(card))
 
     def report(self):
-        print(self.notes)
-        if self.overflowed:
-            print("OVERFLOW")
+        print(self.notes.lstrip(", \n"))
+
+    def scry(self, n):
+        if n < 1:
+            raise ValueError("Scrying multiple cards is not supported yet")
+        return  self.clone() | self.grab(None, mill=1)
 
     def safe_getattr(self, attr):
         try:
@@ -460,7 +452,7 @@ class GameState(GameStateBase):
     def cast_arboreal_grazer(self):
         states = GameStates()
         for card in carddata.lands(self.hand):
-            states |= self.play_tapped(card, note=", play" + helpers.pretty(card))
+            states |= self.play_tapped(card, note=", play " + helpers.pretty(card))
         # If we have no lands in hand, there's no reason to cast Grazer.
         return states
 
@@ -517,11 +509,20 @@ class GameState(GameStateBase):
     def cast_tragic_lesson(self):
         return self.draw(2).pitch(1) | self.draw(2).bounce_land()
 
+    def cast_trinket_mage(self):
+        states = GameStates()
+        for card in carddata.trinkets(self.deck_list, best=True):
+            states |= self.grab(card)
+        return states
+
     def cycle_tolaria_west(self):
         states = GameStates()
         for card in carddata.zeros(self.deck_list, best=True):
             states |= self.grab(card)
         return states
+
+    def cycle_tranquil_thicket(self):
+        return self.draw(1)
 
     def play_boros_garrison(self):
         return self.bounce_land()
@@ -531,3 +532,6 @@ class GameState(GameStateBase):
 
     def play_simic_growth_chamber(self):
         return self.bounce_land()
+
+    def play_zhalfirin_void(self):
+        return self.scry(1)

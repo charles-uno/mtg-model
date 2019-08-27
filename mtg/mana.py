@@ -33,7 +33,7 @@ class Mana(ManaBase):
         colored = self.green + self.blue
         if self.total > colored or colored == 0:
             expr = str(self.total - colored)
-        return expr + self.green*"G" + self.blue*"U"
+        return "\033[0;35m" + expr + self.green*"G" + self.blue*"U" + "\033[0m"
 
     def __repr__(self):
         return "Mana(" + repr(str(self)) + ")"

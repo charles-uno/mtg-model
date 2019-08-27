@@ -84,12 +84,8 @@ This model is well-suited to quantify goldfishing impacts of...
 
 Parallelism! Game states are immutable and they don't look at any shared variables. Could readily make use of multithreading or multiprocessing.
 
-Don't look at the `GameState.notes` member when hashing in the set. The notes are sensitive to what choices were made when tapping lands, which we don't really care about.
-
 Add verbose logging to keep track of the complete lines from many games. Would be good to have the ability to grep through them to see (for example) what the best turn one play tends to be.
 
-Add handling for Vesuva and Cavern of Souls. At the moment, they're just counted as colorless lands.
+Add handling for Vesuva and Cavern of Souls. At the moment, they're just counted as colorless lands. Also Aether Hub and/or Gemstone Mine. At the moment, they just tap for whatever we want.
 
 Update command line to accept globs for deck names.
-
-Warn/error for cards with casting costs but no cast funnction. Same for discard costs.

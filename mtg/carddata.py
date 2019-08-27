@@ -89,7 +89,7 @@ def colorless(cards, best=False):
         return {x for x in set(cards) if is_colorless(x)}
 
 
-def trinkets(cards):
+def trinkets(cards, best=False):
     return {x for x in set(cards) if is_artifact(x) and cmc(x) < 2}
 
 
@@ -114,6 +114,10 @@ def is_colorless(card):
 
 def is_creature(card):
     return "creature" in types(card)
+
+
+def is_blue(card):
+    return CARDS[card].get("color") == "blue"
 
 
 def is_green(card):
