@@ -148,6 +148,10 @@ Mountain:
 "Stomping Ground":
     taps_for: G
     type: land
+"Summer Bloom":
+    type: sorcery
+    color: green
+    cost: "1G"
 "Summoner's Pact":
     type: instant
     color: green

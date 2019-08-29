@@ -375,7 +375,9 @@ class GameState(GameStateBase):
     def scry(self, n):
         if n < 1:
             raise ValueError("Scrying multiple cards is not supported yet")
-        return  self.clone() | self.grab(None, mill=1)
+        return self.grab(None, mill=1) | self.clone(
+            notes=self.notes + ", leave " + helpers.pretty(*self.top(1)),
+        )
 
     def safe_getattr(self, attr):
         try:
@@ -493,6 +495,10 @@ class GameState(GameStateBase):
             battlefield_tapped=helpers.tup_add(self.battlefield_tapped, "Sakura-Tribe Scout"),
         )
 
+
+    def cast_summer_bloom(self):
+        return self.clone(land_drops=self.land_drops + 3)
+
     def cast_summoners_pact(self):
         states = GameStates()
         for card in carddata.green_creatures(self.deck_list, best=True):
@@ -532,6 +538,9 @@ class GameState(GameStateBase):
 
     def play_simic_growth_chamber(self):
         return self.bounce_land()
+
+    def play_temple_of_mystery(self):
+        return self.scry(1)
 
     def play_zhalfirin_void(self):
         return self.scry(1)
