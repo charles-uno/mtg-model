@@ -82,7 +82,7 @@ This model is well-suited to quantify goldfishing impacts of...
 
 # Backlog
 
-Parallelism! Game states are immutable and they don't look at any shared variables. Could readily make use of multithreading or multiprocessing.
+Parallelism! Game states are immutable and they don't look at any shared variables. Could readily make use of multithreading or multiprocessing. This could significantly improve performance since the model is CPU-bound.
 
 Add verbose logging to keep track of the complete lines from many games. Would be good to have the ability to grep through them to see (for example) what the best turn one play tends to be.
 

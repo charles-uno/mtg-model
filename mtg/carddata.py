@@ -159,7 +159,7 @@ def types(card):
 
 
 def taps_for(card):
-    if not CARDS[card].get("taps_for"):
+    if CARDS[card].get("taps_for") is None:
         return None
     return [Mana(x) for x in CARDS[card].get("taps_for").split(",")]
 

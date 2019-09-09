@@ -89,6 +89,11 @@ Mountain:
     type: enchantment
     color: green
     cost: G
+"Once Upon a Time":
+    type: instant
+    color: green
+    cost: "1G"
+    cycle_cost: "0"
 "Opt":
     color: blue
     type: instant
