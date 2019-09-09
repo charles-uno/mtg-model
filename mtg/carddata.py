@@ -124,6 +124,10 @@ def is_green(card):
     return CARDS[card].get("color") == "green"
 
 
+def is_red(card):
+    return CARDS[card].get("color") == "red"
+
+
 def is_land(card):
     return "land" in types(card)
 
@@ -136,6 +140,10 @@ def is_permanent(card):
 def cycle_cost(card):
     cost = CARDS[card].get("cycle_cost")
     return cost if cost is None else Mana(cost)
+
+
+def cycle_verb(card):
+    return CARDS[card].get("cycle_verb", "discard")
 
 
 def cost(card):
@@ -159,7 +167,7 @@ def types(card):
 
 
 def taps_for(card):
-    if not CARDS[card].get("taps_for"):
+    if CARDS[card].get("taps_for") is None:
         return None
     return [Mana(x) for x in CARDS[card].get("taps_for").split(",")]
 

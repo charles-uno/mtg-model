@@ -89,6 +89,12 @@ Mountain:
     type: enchantment
     color: green
     cost: G
+"Once Upon a Time":
+    type: instant
+    color: green
+    cost: "1G"
+    cycle_cost: "0"
+    cycle_verb: "cast (free)"
 "Opt":
     color: blue
     type: instant
@@ -98,6 +104,10 @@ Mountain:
     cost: 4GG
     type: creature
     color: green
+"Pyretic Ritual":
+    type: instant
+    color: red
+    cost: "2"
 "Radiant Fountain":
     display: Fountain
     type: land
@@ -117,6 +127,8 @@ Mountain:
     cost: "2G"
     type: sorcery
     cycle_cost: "G"
+    cycle_verb: "suspend"
+    color: green
 "Selesnya Sanctuary":
     type: land
     display: GW
@@ -131,6 +143,7 @@ Mountain:
     enters_tapped: true
     taps_for: G
     cycle_cost: "2"
+    cycle_verb: "cycle"
 "Silhana Wayfinder":
     type: creature
     color: green
@@ -140,6 +153,7 @@ Mountain:
     display: SSG
     color: red
     cycle_cost: "0"
+    cycle_verb: "exile"
 "Simic Growth Chamber":
     display: GU
     type: land
@@ -175,6 +189,7 @@ Mountain:
     taps_for: U
     enters_tapped: true
     cycle_cost: 1UU
+    cycle_verb: transmute
 "Tragic Lesson":
     type: instant
     cost: "2U"

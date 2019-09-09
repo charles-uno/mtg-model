@@ -116,8 +116,9 @@ class GameStates(set):
 # ======================================================================
 
 GAME_STATE_DEFAULTS = {
-    "battlefield_tapped": (),
-    "battlefield_untapped": (),
+    # No need to distinguish tapped from untapped since we tap
+    # everything immediately
+    "battlefield": (),
     "deck_list": (),
     "deck_index": 0,
     "done": False,
@@ -128,6 +129,7 @@ GAME_STATE_DEFAULTS = {
     "on_the_play": 0,
     "overflowed": 0,
     "land_drops": 0,
+    "spells_cast": 0,
     "suspend": (),
     "turn": 0,
 }
@@ -224,27 +226,14 @@ class GameState(GameStateBase):
 
     # ------------------------------------------------------------------
 
-    @property
-    def battlefield(self):
-        return self.battlefield_tapped + self.battlefield_untapped
-
     def bounce_land(self):
         states = GameStates()
         # For fetching and cantrips, some lands are better than others.
         # Choices for what to bounce are trickier.
-        for card in carddata.lands(self.battlefield_tapped):
+        for card in carddata.lands(self.battlefield):
             states |= self.clone(
                 notes=self.notes + ", bounce " + helpers.pretty(card),
-                battlefield_tapped=helpers.tup_sub(self.battlefield_tapped, card),
-                hand=helpers.tup_add(self.hand, card),
-            )
-        # If we have two copies of the same land, one tapped and one
-        # untapped, we always want to bounce the tapped one.
-        cards = set(self.battlefield_untapped) - set(self.battlefield_tapped)
-        for card in carddata.lands(cards):
-            states |= self.clone(
-                notes=self.notes + ", bounce " + helpers.pretty(card),
-                battlefield_untapped=helpers.tup_sub(self.battlefield_untapped, card),
+                battlefield=helpers.tup_sub(self.battlefield, card),
                 hand=helpers.tup_add(self.hand, card),
             )
         return states
@@ -256,18 +245,27 @@ class GameState(GameStateBase):
         states = self.clone(
             hand=helpers.tup_sub(self.hand, card),
             notes=self.notes + "\ncast " + helpers.pretty(card),
+            spells_cast=self.spells_cast + 1,
         ).pay(cost)
         # Don't use the safety wrapper. If casting is a no-op, we
         # shouldn't be casting. And something is probably wrong.
+        return getattr(states, "cast_" + helpers.slug(card))()
+
+    def cast_from_suspend(self, card):
+        states = self.clone(
+            notes=self.notes + ", cast " + helpers.pretty(card) + " from suspend",
+            spells_cast=self.spells_cast + 1,
+        )
         return getattr(states, "cast_" + helpers.slug(card))()
 
     def cycle(self, card):
         cost = carddata.cycle_cost(card)
         if card not in self.hand or cost is None or not self.mana_pool >= cost:
             return GameStates()
+        verb = carddata.cycle_verb(card)
         states = self.clone(
             hand=helpers.tup_sub(self.hand, card),
-            notes=self.notes + "\ndiscard " + helpers.pretty(card),
+            notes=self.notes + "\n" + verb + " " + helpers.pretty(card),
         ).pay(cost)
         return states.safe_getattr("cycle_" + helpers.slug(card))
 
@@ -277,6 +275,22 @@ class GameState(GameStateBase):
             hand=helpers.tup_add(self.hand, *self.top(n)),
             notes=self.notes + ", draw " + helpers.pretty(*self.top(n)),
         )
+
+    def fetch(self, card, sacrifice=None, tapped=None):
+        if card not in self.deck_list:
+            return GameStates()
+        battlefield = self.battlefield
+        if sacrifice:
+            battlefield = helpers.tup_sub(battlefield, sacrifice)
+        state = self.clone(
+            notes=self.notes + ", fetch " + helpers.pretty(card),
+            battlefield=battlefield,
+            hand=helpers.tup_add(self.hand, card),
+        )
+        if tapped or carddata.enters_tapped(card):
+            return state.play_tapped(card)
+        else:
+            return state.play_untapped(card)
 
     def grab(self, card=None, mill=0, note=None):
         notes = self.notes
@@ -297,7 +311,7 @@ class GameState(GameStateBase):
     def pass_turn(self):
         # Optimizations go here. If we played a pact on turn 1, bail. If
         # we passed the turn with no lands, bail. And so on.
-        if self.turn and not self.battlefield_tapped:
+        if self.turn and not self.battlefield:
             return GameStates()
         if self.turn < 2 and self.mana_debt:
             return GameStates()
@@ -306,14 +320,14 @@ class GameState(GameStateBase):
         if "Azusa, Lost but Seeking" in self.battlefield:
             land_drops += 2
         states = self.clone(
-            battlefield_tapped=(),
-            battlefield_untapped=helpers.tup(self.battlefield_tapped + self.battlefield_untapped),
             land_drops=land_drops,
             mana_debt=Mana(),
             mana_pool=Mana(),
             notes=self.notes + "\n---- turn " + str(self.turn+1),
             turn=self.turn+1,
         ).tap_out()
+        # Handle suspended spells
+        states = states.tick_down()
         if mana_debt:
             states = states.pay(mana_debt, note=", pay " + str(mana_debt) + " for pact")
         if self.on_the_play and self.turn == 0:
@@ -354,18 +368,18 @@ class GameState(GameStateBase):
 
     def play_tapped(self, card, note=""):
         states = self.clone(
-            battlefield_tapped=helpers.tup_add(self.battlefield_tapped, card),
+            battlefield=helpers.tup_add(self.battlefield, card),
             hand=helpers.tup_sub(self.hand, card),
             notes=self.notes + note,
         )
-        for _ in range(self.battlefield_untapped.count("Amulet of Vigor")):
-            states = states.untap_tap(card)
+        for _ in range(self.battlefield.count("Amulet of Vigor")):
+            states = states.tap(card)
         return states.safe_getattr("play_" + helpers.slug(card))
 
     def play_untapped(self, card):
         states = self.clone(
             hand=helpers.tup_sub(self.hand, card),
-            battlefield_untapped=helpers.tup_add(self.battlefield_untapped, card),
+            battlefield=helpers.tup_add(self.battlefield, card),
         ).tap(card)
         return states.safe_getattr("play_" + helpers.slug(card))
 
@@ -390,19 +404,19 @@ class GameState(GameStateBase):
         states = GameStates()
         for m in carddata.taps_for(card):
             mana_pool = self.mana_pool + m
-            if mana_pool:
+            if m:
                 mana_note = ", " + str(mana_pool) + " in pool" if mana_pool else ""
+            else:
+                mana_note = ""
             states |= self.clone(
                 mana_pool=mana_pool,
-                battlefield_tapped=helpers.tup_add(self.battlefield_tapped, card),
-                battlefield_untapped=helpers.tup_sub(self.battlefield_untapped, card),
                 notes=self.notes + mana_note,
             )
         return states or GameStates([self])
 
     def tap_out(self):
         pools, new_pools = {self.mana_pool}, set()
-        for card in self.battlefield_untapped:
+        for card in self.battlefield:
             if not carddata.taps_for(card):
                 continue
             for m in carddata.taps_for(card):
@@ -417,32 +431,36 @@ class GameState(GameStateBase):
             )
         return states
 
+    def tick_down(self):
+        if not self.suspend:
+            return GameStates([self])
+        suspend = []
+        to_cast = []
+        for card in self.suspend:
+            card = card.replace(".", "", 1)
+            if "." in card:
+                suspend.append(card)
+            else:
+                to_cast.append(card)
+        if suspend:
+            states = self.clone(
+                suspend=helpers.tup(suspend),
+                notes=self.notes + ", " + helpers.pretty(*suspend) + " ticking down",
+            )
+        else:
+            states = self
+        for card in to_cast:
+            states = states.cast_from_suspend(card)
+        return states
+
     def top(self, n):
         return self.deck_list[self.deck_index:self.deck_index + n]
-
-    def untap(self, card):
-        return self.clone(
-            battlefield_tapped=helpers.tup_sub(self.battlefield_tapped, card),
-            battlefield_untapped=helpers.tup_add(self.battlefield_untapped, card),
-        )
-
-    def untap_tap(self, card):
-        states = GameStates()
-        for m in carddata.taps_for(card):
-            mana_pool = self.mana_pool + m
-            if mana_pool:
-                mana_note = ", " + str(mana_pool) + " in pool" if mana_pool else ""
-            states |= self.clone(
-                mana_pool=mana_pool,
-                notes=self.notes + mana_note,
-            )
-        return states or GameStates([self])
 
     # ------------------------------------------------------------------
 
     def cast_amulet_of_vigor(self):
         return self.clone(
-            battlefield_untapped=helpers.tup_add(self.battlefield_untapped, "Amulet of Vigor"),
+            battlefield=helpers.tup_add(self.battlefield, "Amulet of Vigor"),
         )
 
     def cast_ancient_stirrings(self):
@@ -460,9 +478,9 @@ class GameState(GameStateBase):
 
     def cast_azusa_lost_but_seeking(self):
         if "Azusa, Lost but Seeking" in self.battlefield:
-            return GameStates([self])
+            return GameStates()
         return self.clone(
-            battlefield_untapped=helpers.tup_add(self.battlefield_untapped, "Azusa, Lost but Seeking"),
+            battlefield=helpers.tup_add(self.battlefield, "Azusa, Lost but Seeking"),
             land_drops=self.land_drops + 2,
         )
 
@@ -481,6 +499,12 @@ class GameState(GameStateBase):
             states |= self.grab(card, mill=3)
         return states or self.grab(mill=3, note=", whiff")
 
+    def cast_once_upon_a_time(self):
+        states = GameStates()
+        for card in carddata.creatures_lands(self.top(5), best=True):
+            states |= self.grab(card, mill=5)
+        return states or self.grab(mill=5, note=", whiff")
+
     def cast_opt(self):
         states = GameStates()
         for i in range(2):
@@ -490,11 +514,29 @@ class GameState(GameStateBase):
     def cast_primeval_titan(self):
         return self.clone(done=True)
 
-    def cast_sakura_tribe_scout(self):
+    def cast_pyretic_ritual(self):
+        pool = self.mana_pool + "3"
         return self.clone(
-            battlefield_tapped=helpers.tup_add(self.battlefield_tapped, "Sakura-Tribe Scout"),
+            mana_pool=pool,
+            notes=self.notes + ", " + str(pool) + " in pool"
         )
 
+    def cast_sakura_tribe_elder(self):
+        states = GameStates()
+        for card in {"Forest", "Mountain"}:
+            states |= self.fetch(card, tapped=True)
+        return states
+
+    def cast_sakura_tribe_scout(self):
+        return self.clone(
+            battlefield=helpers.tup_add(self.battlefield, "Sakura-Tribe Scout"),
+        )
+
+    def cast_search_for_tomorrow(self):
+        states = GameStates()
+        for card in {"Forest", "Mountain"}:
+            states |= self.fetch(card)
+        return states
 
     def cast_summer_bloom(self):
         return self.clone(land_drops=self.land_drops + 3)
@@ -512,6 +554,16 @@ class GameState(GameStateBase):
             states |= self.grab(card)
         return states.clone(mana_debt=self.mana_debt + Mana("2GG"))
 
+    def cast_through_the_breach(self):
+        if "Primeval Titan" not in self.hand:
+            return GameStates()
+        # Add a dummy Amulet of Vigor to the battlefield to indicate a
+        # "fast" win
+        return self.clone(
+            done=True,
+            battlefield=helpers.tup_add(self.battlefield, "Amulet of Vigor"),
+        )
+
     def cast_tragic_lesson(self):
         return self.draw(2).pitch(1) | self.draw(2).bounce_land()
 
@@ -520,6 +572,24 @@ class GameState(GameStateBase):
         for card in carddata.trinkets(self.deck_list, best=True):
             states |= self.grab(card)
         return states
+
+    def cycle_once_upon_a_time(self):
+        # Only allowed if this is the first spell we have cast all game.
+        if self.spells_cast:
+            return GameStates()
+        return self.clone(spells_cast=self.spells_cast+1).cast_once_upon_a_time()
+
+    def cycle_search_for_tomorrow(self):
+        return self.clone(
+            suspend=helpers.tup_add(self.suspend, "Search for Tomorrow.."),
+        )
+
+    def cycle_simian_spirit_guide(self):
+        pool = self.mana_pool + "1"
+        return self.clone(
+            mana_pool=pool,
+            notes=self.notes + ", " + str(pool) + " in pool"
+        )
 
     def cycle_tolaria_west(self):
         states = GameStates()
@@ -541,6 +611,12 @@ class GameState(GameStateBase):
 
     def play_temple_of_mystery(self):
         return self.scry(1)
+
+    def play_wooded_foothills(self):
+        states = GameStates()
+        for card in {"Forest", "Mountain", "Stomping Ground"}:
+            states |= self.fetch(card)
+        return states
 
     def play_zhalfirin_void(self):
         return self.scry(1)

@@ -15,12 +15,14 @@ def pretty(*cards, color=True):
         pretty_card = rmchars(card, "-' ,.")
         if color:
 
-            if carddata.is_colorless(card):
+            if carddata.is_colorless(card.rstrip(".")):
                 pretty_card = highlight(pretty_card, "brown")
-            if carddata.is_green(card):
+            if carddata.is_green(card.rstrip(".")):
                 pretty_card = highlight(pretty_card, "green")
-            if carddata.is_blue(card):
+            if carddata.is_blue(card.rstrip(".")):
                 pretty_card = highlight(pretty_card, "blue")
+            if carddata.is_red(card.rstrip(".")):
+                pretty_card = highlight(pretty_card, "red")
 
         if cards.count(card) > 1:
             blurbs.append(str(cards.count(card)) + "*" + pretty_card)
@@ -56,6 +58,8 @@ def highlight(text, color=None):
         return "\033[36m" + text + "\033[0m"
     if color == "brown":
         return "\033[33m" + text + "\033[0m"
+    if color == "red":
+        return "\033[31m" + text + "\033[0m"
     return text
 
 
