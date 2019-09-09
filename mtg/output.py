@@ -34,10 +34,8 @@ def print_stats(names):
         for t in turns:
             n += tally[t]
             line += "   " + pcts(n, total, z=2)
-
         overflows = sum(1 for x in lines if x.endswith("1"))
         line += "  |  " + pcts(overflows, total, z=2)
-
         print(line)
 
 
@@ -66,7 +64,10 @@ def pcts(m, n, z=1):
     c = float(m*m)
     pp = (-b + math.sqrt(b*b-4*a*c))/(2*a)
     pm = (-b - math.sqrt(b*b-4*a*c))/(2*a)
-    p = (pp+pm)/2
+    # For large samples, both ways give the same value. For small sample
+    # sizes, make sure we say zero when we've seen zero.
+#    p = (pp+pm)/2
+    p = m/n
     dp = (pp-pm)/2
     return pct(p) + " ± " + pct(dp)
 

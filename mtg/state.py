@@ -251,13 +251,21 @@ class GameState(GameStateBase):
         # shouldn't be casting. And something is probably wrong.
         return getattr(states, "cast_" + helpers.slug(card))()
 
+    def cast_from_suspend(self, card):
+        states = self.clone(
+            notes=self.notes + ", cast " + helpers.pretty(card) + " from suspend",
+            spells_cast=self.spells_cast + 1,
+        )
+        return getattr(states, "cast_" + helpers.slug(card))()
+
     def cycle(self, card):
         cost = carddata.cycle_cost(card)
         if card not in self.hand or cost is None or not self.mana_pool >= cost:
             return GameStates()
+        verb = carddata.cycle_verb(card)
         states = self.clone(
             hand=helpers.tup_sub(self.hand, card),
-            notes=self.notes + "\ndiscard " + helpers.pretty(card),
+            notes=self.notes + "\n" + verb + " " + helpers.pretty(card),
         ).pay(cost)
         return states.safe_getattr("cycle_" + helpers.slug(card))
 
@@ -318,6 +326,8 @@ class GameState(GameStateBase):
             notes=self.notes + "\n---- turn " + str(self.turn+1),
             turn=self.turn+1,
         ).tap_out()
+        # Handle suspended spells
+        states = states.tick_down()
         if mana_debt:
             states = states.pay(mana_debt, note=", pay " + str(mana_debt) + " for pact")
         if self.on_the_play and self.turn == 0:
@@ -421,6 +431,28 @@ class GameState(GameStateBase):
             )
         return states
 
+    def tick_down(self):
+        if not self.suspend:
+            return GameStates([self])
+        suspend = []
+        to_cast = []
+        for card in self.suspend:
+            card = card.replace(".", "", 1)
+            if "." in card:
+                suspend.append(card)
+            else:
+                to_cast.append(card)
+        if suspend:
+            states = self.clone(
+                suspend=helpers.tup(suspend),
+                notes=self.notes + ", " + helpers.pretty(*suspend) + " ticking down",
+            )
+        else:
+            states = self
+        for card in to_cast:
+            states = states.cast_from_suspend(card)
+        return states
+
     def top(self, n):
         return self.deck_list[self.deck_index:self.deck_index + n]
 
@@ -482,6 +514,13 @@ class GameState(GameStateBase):
     def cast_primeval_titan(self):
         return self.clone(done=True)
 
+    def cast_pyretic_ritual(self):
+        pool = self.mana_pool + "3"
+        return self.clone(
+            mana_pool=pool,
+            notes=self.notes + ", " + str(pool) + " in pool"
+        )
+
     def cast_sakura_tribe_elder(self):
         states = GameStates()
         for card in {"Forest", "Mountain"}:
@@ -492,6 +531,12 @@ class GameState(GameStateBase):
         return self.clone(
             battlefield=helpers.tup_add(self.battlefield, "Sakura-Tribe Scout"),
         )
+
+    def cast_search_for_tomorrow(self):
+        states = GameStates()
+        for card in {"Forest", "Mountain"}:
+            states |= self.fetch(card)
+        return states
 
     def cast_summer_bloom(self):
         return self.clone(land_drops=self.land_drops + 3)
@@ -509,6 +554,16 @@ class GameState(GameStateBase):
             states |= self.grab(card)
         return states.clone(mana_debt=self.mana_debt + Mana("2GG"))
 
+    def cast_through_the_breach(self):
+        if "Primeval Titan" not in self.hand:
+            return GameStates()
+        # Add a dummy Amulet of Vigor to the battlefield to indicate a
+        # "fast" win
+        return self.clone(
+            done=True,
+            battlefield=helpers.tup_add(self.battlefield, "Amulet of Vigor"),
+        )
+
     def cast_tragic_lesson(self):
         return self.draw(2).pitch(1) | self.draw(2).bounce_land()
 
@@ -523,6 +578,18 @@ class GameState(GameStateBase):
         if self.spells_cast:
             return GameStates()
         return self.clone(spells_cast=self.spells_cast+1).cast_once_upon_a_time()
+
+    def cycle_search_for_tomorrow(self):
+        return self.clone(
+            suspend=helpers.tup_add(self.suspend, "Search for Tomorrow.."),
+        )
+
+    def cycle_simian_spirit_guide(self):
+        pool = self.mana_pool + "1"
+        return self.clone(
+            mana_pool=pool,
+            notes=self.notes + ", " + str(pool) + " in pool"
+        )
 
     def cycle_tolaria_west(self):
         states = GameStates()
