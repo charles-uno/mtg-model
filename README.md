@@ -63,6 +63,7 @@ There are a few simplifying assumptions, especially surrounding Pact triggers. E
 
 The most expensive consideration is mana. We care about both green and blue mana, so there's a combinatorial explosion every time we have lands on the board that can tap for both. To mitigate this, we keep game state objects in sets to automatically collapse duplicates. This means that game states themselves must be immutable. In essence, each game state is a `namedtuple` object. Operations like drawing a card or playing a land create a new game state rather than changing the old one.
 
+It also bears noting that the model has superhuman "instincts" about the order of the deck. Finding the winning line by exhaustive search sometimes means shuffling the deck to blind-draw into just the right card. To suppress non-human play patterns, this model does not consider mulligans. And whenever it would fetch a card from the deck, instead it creates a new one out of thin air (neglecting deck thinning, a [percent-level](http://charles.uno/valakut-simulation/) uncertainty). Similarly, when selecting Tron lands with Ancient Stirrings or Sylvan Scrying, the model makes choices alphabetically to avoid taking into account its "instincts" about the order of the deck.
 
 # Adding Decks and Cards
 
@@ -79,6 +80,7 @@ This model is well-suited to quantify goldfishing impacts of...
 - Lotus Field vs Simian Spirit Guide
 - Tranquil Thicket vs Zhalfirin Void vs Temple of Mystery vs Sheltered Thicket
 
+It's also appropriate for looking at goldfishing numbers for different builds of Valakut, how cantrips affect Tron, and so on. 
 
 # Backlog
 
