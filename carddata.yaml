@@ -1,3 +1,9 @@
+"Allosaurus Rider":
+    cost: "5GG"
+    cycle_cost: "0"
+    cycle_verb: "cast (free)"
+    type: creature
+    color: green
 "Amulet of Vigor":
     display: Amulet
     cost: "1"
@@ -35,6 +41,10 @@ Blank:
     enters_tapped: true
     taps_for: "2"
     type: land
+"Chancellor of the Tangle":
+    type: creature
+    color: green
+    cost: "4GGG"
 "Charge Counter":
     type: artifact
     taps_for: "G,U"
@@ -42,6 +52,10 @@ Blank:
     type: artifact
     cost: "1"
     sacrifice_cost: "1"
+"Eldrich Evolution":
+    type: sorcery
+    color: green
+    cost: "1GG"
 "Elvish Rejuvenator":
     cost: "2G"
     type: creature
@@ -61,6 +75,10 @@ Forest:
     display: Mine
     type: land
     taps_for: G,U
+"Autochthon Wurm":
+    type: creature
+    color: green
+    cost: "12GGG"
 "Growth Spiral":
     cost: "UG"
     color: green
@@ -73,6 +91,10 @@ Island:
     type: land
     taps_for: G
     enters_tapped: true
+"Life Goes On":
+    type: instant
+    color: green
+    cost: "G"
 "Lotus Field":
     enters_tapped: true
     taps_for: GGG,UUU
@@ -84,6 +106,10 @@ Manamorphose:
 Mountain:
     type: basic,land
     taps_for: "1"
+Neoform:
+    type: sorcery
+    cost: "UG"
+    color: blue,green
 "Oath of Nissa":
     display: "Oath"
     type: enchantment
@@ -134,6 +160,10 @@ Mountain:
     display: GW
     taps_for: "1G"
     enters_tapped: true
+"Serum Visions":
+    color: blue
+    type: sorcery
+    cost: "U"
 "Shefet Monitor":
     cycle_cost: "3G"
     type: creature
@@ -216,6 +246,11 @@ Mountain:
     type: land
     taps_for: "1"
     enters_tapped: true
+"Wild Cantor":
+    type: creature
+    cost: "1"
+    color: green,red
+    sacrifice_cost: "0"
 "Wooded Foothills":
     type: land
     taps_for: ""

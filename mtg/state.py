@@ -228,11 +228,13 @@ class GameState(GameStateBase):
 
     # ------------------------------------------------------------------
 
-    def add_mana(self, m):
+    def add_mana(self, m, note=""):
         pool = self.mana_pool + m
+        if not note:
+            note = ", " + str(pool) + " in pool"
         return self.clone(
             mana_pool=pool,
-            notes=self.notes + ", " + str(pool) + " in pool"
+            notes=self.notes + note
         )
 
     def bounce_land(self):
@@ -378,6 +380,13 @@ class GameState(GameStateBase):
             notes=self.notes + "\n---- turn " + str(self.turn+1),
             turn=self.turn+1,
         ).tap_out()
+        # Chancellor of the Tangle
+        if self.turn == 0 and "Chancellor of the Tangle" in self.hand:
+            chancellors = [x for x in self.hand if x == "Chancellor of the Tangle"]
+            states = states.add_mana(
+                len(chancellors)*"G",
+                note=", reveal " + helpers.pretty(*chancellors),
+            )
         # Handle suspended spells
         states = states.tick_down()
         if mana_debt:
@@ -396,10 +405,12 @@ class GameState(GameStateBase):
             )
         return states
 
-    def pitch(self, n):
+    def pitch(self, n, options=None):
         """GameStates is a set, so there's already a discard function."""
+        if options is None:
+            options = self.hand
         states = GameStates()
-        for cards in itertools.combinations(self.hand, n):
+        for cards in itertools.combinations(options, n):
             states |= self.clone(
                 hand=helpers.tup_sub(self.hand, *cards),
                 notes=self.notes + ", discard " + helpers.pretty(*cards),
@@ -449,11 +460,45 @@ class GameState(GameStateBase):
         return getattr(states, "sacrifice_" + helpers.slug(card))()
 
     def scry(self, n):
-        if n < 1:
-            raise ValueError("Scrying multiple cards is not supported yet")
-        return self.grab(None, mill=1) | self.clone(
-            notes=self.notes + ", leave " + helpers.pretty(*self.top(1)),
-        )
+        if n == 1:
+            return self.grab(None, mill=1) | self.clone(
+                notes=self.notes + ", leave " + helpers.pretty(*self.top(1)),
+            )
+        elif n == 2:
+            states = GameStates()
+            before = self.deck_list[:self.deck_index]
+            limbo = self.top(2)
+            after = self.deck_list[self.deck_index+2:]
+            # Top top
+            states |= self.clone(
+                notes=self.notes + ", leave " + helpers.pretty(*limbo),
+            )
+            # Bottom top
+            states |= self.clone(
+                deck_index=self.deck_index+1,
+                notes=self.notes + ", mill " + helpers.pretty(limbo[0]) + ", leave " + helpers.pretty(limbo[1]),
+            )
+            # Bottom bottom
+            states |= self.clone(
+                deck_index=self.deck_index+2,
+                notes=self.notes + ", mill " + helpers.pretty(*limbo),
+            )
+            # Top top (flipped order)
+            flipped_deck = before + limbo[::-1] + after
+            states |= self.clone(
+                deck_list=flipped_deck,
+                notes=self.notes + ", leave " + helpers.pretty(*limbo[::-1]),
+            )
+            # Top bottom
+            flipped_deck = before + limbo[::-1] + after
+            states |= self.clone(
+                deck_index=self.deck_index+1,
+                deck_list=flipped_deck,
+                notes=self.notes + ", mill " + helpers.pretty(limbo[1]) + ", leave " + helpers.pretty(limbo[0]),
+            )
+            return states
+        else:
+            raise ValueError("Scrying 3+ cards is not supported")
 
     def safe_getattr(self, attr):
         try:
@@ -546,10 +591,16 @@ class GameState(GameStateBase):
     def cast_bond_of_flourishing(self):
         return self.grab_from_top(carddata.permanents, 3, best=True)
 
+    def cast_chancellor_of_the_tangle(self):
+        return GameStates([self])
+
     def cast_chromatic_star(self):
         return self.clone(
             battlefield=helpers.tup_add(self.battlefield, "Chromatic Star"),
         )
+
+    def cast_eldrich_evolution(self):
+        return self.cast_neoform()
 
     def cast_expedition_map(self):
         return self.clone(
@@ -558,6 +609,17 @@ class GameState(GameStateBase):
 
     def cast_explore(self):
         return self.clone(land_drops=self.land_drops+1).draw(1)
+
+    def cast_manamorphose(self):
+        states = GameStates()
+        for m in {"GG", "GU", "UU"}:
+            states |= self.add_mana(m)
+        return states
+
+    def cast_neoform(self):
+        if "Allosaurus Rider" not in self.battlefield:
+            return GameStates()
+        return self.clone(done=True)
 
     def cast_oath_of_nissa(self):
         return self.grab_from_top(carddata.creatures_lands, 3, best=True)
@@ -593,6 +655,9 @@ class GameState(GameStateBase):
         for card in {"Forest", "Mountain"}:
             states |= self.fetch(card)
         return states
+
+    def cast_serum_visions(self):
+        return self.draw(1).scry(2)
 
     def cast_summer_bloom(self):
         return self.clone(land_drops=self.land_drops + 3)
@@ -639,6 +704,18 @@ class GameState(GameStateBase):
             states |= self.grab(card)
         return states
 
+    def cast_wild_cantor(self):
+        return self.clone(
+            battlefield=helpers.tup_add(self.battlefield, "Wild Cantor"),
+        )
+
+    def cycle_allosaurus_rider(self):
+        cards = [x for x in self.hand if carddata.is_green(x)]
+        return self.pitch(2, options=cards).clone(
+            spells_cast=self.spells_cast+1,
+            battlefield=helpers.tup_add(self.battlefield, "Allosaurus Rider"),
+        )
+
     def cycle_once_upon_a_time(self):
         # Only allowed if this is the first spell we have cast all game.
         if self.spells_cast:
@@ -651,7 +728,7 @@ class GameState(GameStateBase):
         )
 
     def cycle_simian_spirit_guide(self):
-        return add_mana("1")
+        return self.add_mana("1")
 
     def cycle_tolaria_west(self):
         states = GameStates()
@@ -697,3 +774,6 @@ class GameState(GameStateBase):
 
     def sacrifice_expedition_map(self):
         return self.cast_sylvan_scrying()
+
+    def sacrifice_wild_cantor(self):
+        return self.add_mana("G") | self.add_mana("U")

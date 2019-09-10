@@ -71,6 +71,7 @@ def creatures_lands(cards, best=False):
     else:
         return {x for x in set(cards) if is_creature(x) or is_land(x)}
 
+
 def green_creatures(cards, best=False):
     return {x for x in set(cards) if is_green(x) and is_creature(x)}
 
@@ -121,7 +122,7 @@ def is_blue(card):
 
 
 def is_green(card):
-    return CARDS[card].get("color") == "green"
+    return "green" in str(CARDS[card].get("color"))
 
 
 def is_red(card):
