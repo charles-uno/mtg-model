@@ -9,12 +9,15 @@ def save(name, summary):
         handle.write(summary + "\n")
 
 
-def print_stats(names):
+def print_stats(names, verbose=False):
     if not names:
         names = sorted(x.split(".")[0] for x in os.listdir("decks"))
     namewidth = max(len(x) for x in names) + 1
     colwidth = 9
-    turns = [2, 3, 4]
+    if verbose:
+        turns = [2, 2.5, 3, 3.5, 4, 4.5]
+    else:
+        turns = [2, 3, 4]
     header = "name".ljust(namewidth)
     for t in turns:
         header += "   " + ("turn %d" % t).rjust(colwidth)
@@ -28,6 +31,8 @@ def print_stats(names):
             if not line:
                 continue
             t = int(line.split(",")[0])
+            if line.split(",")[1] == "0":
+                t += 0.5
             tally[t] += 1
         line = name.ljust(namewidth)
         n = 0

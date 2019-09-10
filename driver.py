@@ -12,7 +12,7 @@ def main():
     args = parse_args()
     # If reporting results, do so.
     if args.results:
-        return mtg.print_stats(args.decks)
+        return mtg.print_stats(args.decks, verbose=args.verbose)
     # If given multiple names, choose randomly each time.
     namewidth = max(len(x) for x in args.decks)
     trial = 0
@@ -63,6 +63,12 @@ def parse_args():
         "--results",
         action="store_true",
         help="Instead of running simulations, print the results for the given decks",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Verbose output",
     )
     return parser.parse_args()
 

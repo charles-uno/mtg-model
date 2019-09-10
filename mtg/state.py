@@ -183,6 +183,8 @@ class GameState(GameStateBase):
             states |= self.cast(card)
             states |= self.cycle(card)
             states |= self.play(card)
+        for card in set(self.battlefield):
+            states |= self.sacrifice(card)
         return states
 
     def next_turn(self):
@@ -226,6 +228,13 @@ class GameState(GameStateBase):
 
     # ------------------------------------------------------------------
 
+    def add_mana(self, m):
+        pool = self.mana_pool + m
+        return self.clone(
+            mana_pool=pool,
+            notes=self.notes + ", " + str(pool) + " in pool"
+        )
+
     def bounce_land(self):
         states = GameStates()
         # For fetching and cantrips, some lands are better than others.
@@ -257,6 +266,24 @@ class GameState(GameStateBase):
             spells_cast=self.spells_cast + 1,
         )
         return getattr(states, "cast_" + helpers.slug(card))()
+
+    def check_tron(self):
+        tron = {
+            "Urza's Mine",
+            "Urza's Power Plant",
+            "Urza's Tower",
+        }
+        tron_have = set(self.battlefield) & tron
+        tron_need = tron - tron_have
+        if len(tron_have) == 3:
+            return self.clone(done=True)
+        elif len(tron_have) == 2 and self.land_drops and tron_need <= set(self.hand):
+            return self.clone(
+                done=True,
+                battlefield=helpers.tup_add(self.battlefield, "Amulet of Vigor"),
+            ).play(tron_need.pop(), silent=True)
+        else:
+            return GameStates([self])
 
     def cycle(self, card):
         cost = carddata.cycle_cost(card)
@@ -308,6 +335,31 @@ class GameState(GameStateBase):
             notes=notes,
         )
 
+    def tron_choices(self, cards):
+        # The computer has superhuman "instincts" about the order of the
+        # deck. Force it to choose arbitrarily.
+        tron = {
+            "Urza's Mine",
+            "Urza's Power Plant",
+            "Urza's Tower",
+        }
+        tron_have = tron & set(self.battlefield + self.hand)
+        non_tron = cards - tron
+        tron_options = (set(cards) & tron) - tron_have
+        if tron_options:
+            return set([sorted(tron_options)[0]]) | non_tron
+        else:
+            return non_tron
+
+    def grab_from_top(self, card_filter, n, **kwargs):
+        states = GameStates()
+        cards = card_filter(self.top(n), **kwargs)
+        # The computer has superhuman "instincts" about the order of the
+        # deck. Force it to choose arbitrarily.
+        for card in self.tron_choices(cards):
+            states |= self.grab(card, mill=n)
+        return states or self.grab(mill=n, note=", whiff")
+
     def pass_turn(self):
         # Optimizations go here. If we played a pact on turn 1, bail. If
         # we passed the turn with no lands, bail. And so on.
@@ -333,7 +385,7 @@ class GameState(GameStateBase):
         if self.on_the_play and self.turn == 0:
             return states
         else:
-            return states.draw(1)
+            return states.draw(1).check_tron()
 
     def pay(self, cost, note=""):
         states = GameStates()
@@ -354,7 +406,7 @@ class GameState(GameStateBase):
             )
         return states
 
-    def play(self, card):
+    def play(self, card, **kwargs):
         if not self.land_drops or not carddata.is_land(card) or not card in self.hand:
             return GameStates()
         states = self.clone(
@@ -362,29 +414,39 @@ class GameState(GameStateBase):
             land_drops=self.land_drops - 1,
         )
         if carddata.enters_tapped(card):
-            return states.play_tapped(card)
+            return states.play_tapped(card, **kwargs)
         else:
-            return states.play_untapped(card)
+            return states.play_untapped(card, **kwargs)
 
-    def play_tapped(self, card, note=""):
+    def play_tapped(self, card, note="", **kwargs):
         states = self.clone(
             battlefield=helpers.tup_add(self.battlefield, card),
             hand=helpers.tup_sub(self.hand, card),
             notes=self.notes + note,
         )
         for _ in range(self.battlefield.count("Amulet of Vigor")):
-            states = states.tap(card)
+            states = states.tap(card, **kwargs)
         return states.safe_getattr("play_" + helpers.slug(card))
 
-    def play_untapped(self, card):
+    def play_untapped(self, card, **kwargs):
         states = self.clone(
             hand=helpers.tup_sub(self.hand, card),
             battlefield=helpers.tup_add(self.battlefield, card),
-        ).tap(card)
+        ).tap(card, **kwargs)
         return states.safe_getattr("play_" + helpers.slug(card))
 
     def report(self):
         print(self.notes.lstrip(", \n"))
+
+    def sacrifice(self, card):
+        cost = carddata.sacrifice_cost(card)
+        if card not in self.battlefield or cost is None or not self.mana_pool >= cost:
+            return GameStates()
+        states = self.clone(
+            battlefield=helpers.tup_sub(self.battlefield, card),
+            notes=self.notes + "\nsacrifice " + helpers.pretty(card),
+        ).pay(cost)
+        return getattr(states, "sacrifice_" + helpers.slug(card))()
 
     def scry(self, n):
         if n < 1:
@@ -400,11 +462,11 @@ class GameState(GameStateBase):
             return GameStates([self])
         return func()
 
-    def tap(self, card):
+    def tap(self, card, silent=False):
         states = GameStates()
         for m in carddata.taps_for(card):
             mana_pool = self.mana_pool + m
-            if m:
+            if m and not silent:
                 mana_note = ", " + str(mana_pool) + " in pool" if mana_pool else ""
             else:
                 mana_note = ""
@@ -464,10 +526,7 @@ class GameState(GameStateBase):
         )
 
     def cast_ancient_stirrings(self):
-        states = GameStates()
-        for card in carddata.colorless(self.top(5), best=True):
-            states |= self.grab(card, mill=5)
-        return states or self.grab(mill=5, note=", whiff")
+        return self.grab_from_top(carddata.colorless, 5, best=True)
 
     def cast_arboreal_grazer(self):
         states = GameStates()
@@ -485,25 +544,26 @@ class GameState(GameStateBase):
         )
 
     def cast_bond_of_flourishing(self):
-        states = GameStates()
-        for card in carddata.permanents(self.top(3), best=True):
-            states |= self.grab(card, mill=3)
-        return states or self.grab(mill=3, note=", whiff")
+        return self.grab_from_top(carddata.permanents, 3, best=True)
+
+    def cast_chromatic_star(self):
+        return self.clone(
+            battlefield=helpers.tup_add(self.battlefield, "Chromatic Star"),
+        )
+
+    def cast_expedition_map(self):
+        return self.clone(
+            battlefield=helpers.tup_add(self.battlefield, "Expedition Map"),
+        )
 
     def cast_explore(self):
         return self.clone(land_drops=self.land_drops+1).draw(1)
 
     def cast_oath_of_nissa(self):
-        states = GameStates()
-        for card in carddata.creatures_lands(self.top(3), best=True):
-            states |= self.grab(card, mill=3)
-        return states or self.grab(mill=3, note=", whiff")
+        return self.grab_from_top(carddata.creatures_lands, 3, best=True)
 
     def cast_once_upon_a_time(self):
-        states = GameStates()
-        for card in carddata.creatures_lands(self.top(5), best=True):
-            states |= self.grab(card, mill=5)
-        return states or self.grab(mill=5, note=", whiff")
+        return self.grab_from_top(carddata.creatures_lands, 5, best=True)
 
     def cast_opt(self):
         states = GameStates()
@@ -515,11 +575,7 @@ class GameState(GameStateBase):
         return self.clone(done=True)
 
     def cast_pyretic_ritual(self):
-        pool = self.mana_pool + "3"
-        return self.clone(
-            mana_pool=pool,
-            notes=self.notes + ", " + str(pool) + " in pool"
-        )
+        return self.add_mana("3")
 
     def cast_sakura_tribe_elder(self):
         states = GameStates()
@@ -554,6 +610,16 @@ class GameState(GameStateBase):
             states |= self.grab(card)
         return states.clone(mana_debt=self.mana_debt + Mana("2GG"))
 
+    def cast_sylvan_scrying(self):
+        # The computer has superhuman "instincts" about the order of the
+        # deck. It knows what we're about to draw. Force it to make the
+        # choice arbitrarily.
+        cards = carddata.lands(self.deck_list)
+        states = GameStates()
+        for card in self.tron_choices(cards):
+            states |= self.grab(card)
+        return states
+
     def cast_through_the_breach(self):
         if "Primeval Titan" not in self.hand:
             return GameStates()
@@ -585,11 +651,7 @@ class GameState(GameStateBase):
         )
 
     def cycle_simian_spirit_guide(self):
-        pool = self.mana_pool + "1"
-        return self.clone(
-            mana_pool=pool,
-            notes=self.notes + ", " + str(pool) + " in pool"
-        )
+        return add_mana("1")
 
     def cycle_tolaria_west(self):
         states = GameStates()
@@ -612,6 +674,15 @@ class GameState(GameStateBase):
     def play_temple_of_mystery(self):
         return self.scry(1)
 
+    def play_urzas_mine(self):
+        return self.check_tron()
+
+    def play_urzas_power_plant(self):
+        return self.check_tron()
+
+    def play_urzas_tower(self):
+        return self.check_tron()
+
     def play_wooded_foothills(self):
         states = GameStates()
         for card in {"Forest", "Mountain", "Stomping Ground"}:
@@ -620,3 +691,9 @@ class GameState(GameStateBase):
 
     def play_zhalfirin_void(self):
         return self.scry(1)
+
+    def sacrifice_chromatic_star(self):
+        return self.add_mana("G").draw(1)
+
+    def sacrifice_expedition_map(self):
+        return self.cast_sylvan_scrying()

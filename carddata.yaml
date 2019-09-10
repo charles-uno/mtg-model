@@ -203,6 +203,15 @@ Mountain:
     cost: "2U"
     type: creature
     color: blue
+"Urza's Mine":
+    type: land
+    taps_for: "1"
+"Urza's Power Plant":
+    type: land
+    taps_for: "1"
+"Urza's Tower":
+    type: land
+    taps_for: "1"
 "Valakut, the Molten Pinnacle":
     type: land
     taps_for: "1"

@@ -146,6 +146,11 @@ def cycle_verb(card):
     return CARDS[card].get("cycle_verb", "discard")
 
 
+def sacrifice_cost(card):
+    cost = CARDS[card].get("sacrifice_cost")
+    return cost if cost is None else Mana(cost)
+
+
 def cost(card):
     cost = CARDS[card].get("cost")
     return cost if cost is None else Mana(cost)
