@@ -1,6 +1,6 @@
 # Modeling Amulet Titan
 
-The script `driver.py` models games of Amulet Titan by exhaustive search. It's not particularly efficient (a few seconds per game) but if there's a way to get Titan on the table by turn this model is guaranteed to find it. You can read [here](http://charles.uno/valakut-simulation/) about my work on Valakut with a similar model.
+The script `driver.py` models games of Amulet Titan (and sometimes Valakut and Tron) by exhaustive search. It's not particularly efficient (a few seconds per game) but if there's a way to get Titan on the table by turn this model is guaranteed to find it. You can read [here](http://charles.uno/valakut-simulation/) about my work on Valakut with a similar model.
 
 
 # Usage
@@ -80,7 +80,7 @@ This model is well-suited to quantify goldfishing impacts of...
 - Lotus Field vs Simian Spirit Guide
 - Tranquil Thicket vs Zhalfirin Void vs Temple of Mystery vs Sheltered Thicket
 
-It's also appropriate for looking at goldfishing numbers for different builds of Valakut, how cantrips affect Tron, and so on. 
+It's also appropriate for looking at goldfishing numbers for different builds of Valakut, how cantrips affect Tron, and so on.
 
 # Backlog
 
