@@ -31,7 +31,7 @@ def print_stats(names, verbose=False):
             if not line:
                 continue
             t = int(line.split(",")[0])
-            if line.split(",")[1] == "0":
+            if verbose and line.split(",")[1] == "0":
                 t += 0.5
             tally[t] += 1
         line = name.ljust(namewidth)
