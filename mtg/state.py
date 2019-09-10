@@ -25,7 +25,7 @@ from .mana import Mana
 
 # Most of the hands that don't converge at 2e5 states also don't
 # converge at 5e5 states. How much time do you want to burn trying?
-MAX_STATES = 1e6
+MAX_STATES = 5e5
 N_STATES = 0
 START_TIME = None
 
@@ -565,6 +565,12 @@ class GameState(GameStateBase):
 
     # ------------------------------------------------------------------
 
+    def cast_allosaurus_rider(self):
+        return self.clone(
+            spells_cast=self.spells_cast+1,
+            battlefield=helpers.tup_add(self.battlefield, "Allosaurus Rider"),
+        )
+
     def cast_amulet_of_vigor(self):
         return self.clone(
             battlefield=helpers.tup_add(self.battlefield, "Amulet of Vigor"),
@@ -711,10 +717,7 @@ class GameState(GameStateBase):
 
     def cycle_allosaurus_rider(self):
         cards = [x for x in self.hand if carddata.is_green(x)]
-        return self.pitch(2, options=cards).clone(
-            spells_cast=self.spells_cast+1,
-            battlefield=helpers.tup_add(self.battlefield, "Allosaurus Rider"),
-        )
+        return self.pitch(2, options=cards).cast_allosaurus_rider()
 
     def cycle_once_upon_a_time(self):
         # Only allowed if this is the first spell we have cast all game.
