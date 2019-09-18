@@ -355,7 +355,10 @@ class GameState(GameStateBase):
 
     def grab_from_top(self, card_filter, n, **kwargs):
         states = GameStates()
-        cards = card_filter(self.top(n), **kwargs)
+        if card_filter:
+            cards = card_filter(self.top(n), **kwargs)
+        else:
+            cards = set(self.top(n))
         # The computer has superhuman "instincts" about the order of the
         # deck. Force it to choose arbitrarily.
         for card in self.tron_choices(cards):
@@ -664,6 +667,9 @@ class GameState(GameStateBase):
 
     def cast_serum_visions(self):
         return self.draw(1).scry(2)
+
+    def cast_sleight_of_hand(self):
+        return self.grab_from_top(None, 2, best=True)
 
     def cast_summer_bloom(self):
         return self.clone(land_drops=self.land_drops + 3)

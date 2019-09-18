@@ -189,6 +189,10 @@ Neoform:
     type: land
     taps_for: "GU"
     enters_tapped: true
+"Sleight of Hand":
+    type: sorcery
+    cost: "U"
+    color: blue
 "Stomping Ground":
     taps_for: G
     type: land
