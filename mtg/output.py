@@ -15,12 +15,12 @@ def print_stats(names, verbose=False):
     namewidth = max(len(x) for x in names) + 1
     colwidth = 9
     if verbose:
-        turns = [2, 2.5, 3, 3.5, 4, 4.5]
+        turns = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5]
     else:
-        turns = [2, 3, 4]
+        turns = [1, 2, 3, 4]
     header = "name".ljust(namewidth)
     for t in turns:
-        header += "   " + ("turn %d" % t).rjust(colwidth)
+        header += "   " + f"turn {t}".rjust(colwidth)
     header += "  |   overflow"
     print(header)
     for name in names:
