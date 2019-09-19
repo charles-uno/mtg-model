@@ -20,6 +20,7 @@ import time
 from . import carddata
 from . import helpers
 from .mana import Mana
+from .card import Card, Cards
 
 # ======================================================================
 
@@ -149,6 +150,9 @@ class GameState(GameStateBase):
             N_STATES += 1
         new_kwargs = GAME_STATE_DEFAULTS.copy()
         new_kwargs.update(kwargs)
+        for key in ("hand", "deck_list", "battlefield"):
+            if not isinstance(new_kwargs[key], Cards):
+                new_kwargs[key] = Cards(new_kwargs[key], sort=False)
         values = [v for k, v in sorted(new_kwargs.items())]
         return GameStateBase.__new__(cls, *values)
 
@@ -231,7 +235,7 @@ class GameState(GameStateBase):
     def add_mana(self, m, note=""):
         pool = self.mana_pool + m
         if not note:
-            note = ", " + str(pool) + " in pool"
+            note = f", {pool} in pool"
         return self.clone(
             mana_pool=pool,
             notes=self.notes + note
@@ -241,33 +245,33 @@ class GameState(GameStateBase):
         states = GameStates()
         # For fetching and cantrips, some lands are better than others.
         # Choices for what to bounce are trickier.
-        for card in carddata.lands(self.battlefield):
+        for card in self.battlefield.lands:
             states |= self.clone(
-                notes=self.notes + ", bounce " + helpers.pretty(card),
-                battlefield=helpers.tup_sub(self.battlefield, card),
-                hand=helpers.tup_add(self.hand, card),
+                notes=self.notes + f", bounce {card}",
+                battlefield=self.battlefield - card,
+                hand=self.hand + card,
             )
         return states
 
     def cast(self, card):
-        cost = carddata.cost(card)
+        cost = card.cost
         if card not in self.hand or cost is None or not self.mana_pool >= cost:
             return GameStates()
         states = self.clone(
-            hand=helpers.tup_sub(self.hand, card),
-            notes=self.notes + "\ncast " + helpers.pretty(card),
+            hand=self.hand - card,
+            notes=self.notes + f"\ncast {card}",
             spells_cast=self.spells_cast + 1,
         ).pay(cost)
         # Don't use the safety wrapper. If casting is a no-op, we
         # shouldn't be casting. And something is probably wrong.
-        return getattr(states, "cast_" + helpers.slug(card))()
+        return getattr(states, "cast_" + card.slug)()
 
     def cast_from_suspend(self, card):
         states = self.clone(
-            notes=self.notes + ", cast " + helpers.pretty(card) + " from suspend",
+            notes=self.notes + f", cast {card} from suspend",
             spells_cast=self.spells_cast + 1,
         )
-        return getattr(states, "cast_" + helpers.slug(card))()
+        return getattr(states, "cast_" + card.slug)()
 
     def check_tron(self):
         tron = {
@@ -282,27 +286,26 @@ class GameState(GameStateBase):
         elif len(tron_have) == 2 and self.land_drops and tron_need <= set(self.hand):
             return self.clone(
                 done=True,
-                battlefield=helpers.tup_add(self.battlefield, "Amulet of Vigor"),
+                battlefield=self.battlefield + "Amulet of Vigor",
             ).play(tron_need.pop(), silent=True)
         else:
             return GameStates([self])
 
     def cycle(self, card):
-        cost = carddata.cycle_cost(card)
+        cost = card.cycle_cost
         if card not in self.hand or cost is None or not self.mana_pool >= cost:
             return GameStates()
-        verb = carddata.cycle_verb(card)
         states = self.clone(
-            hand=helpers.tup_sub(self.hand, card),
-            notes=self.notes + "\n" + verb + " " + helpers.pretty(card),
+            hand=self.hand - card,
+            notes=self.notes + f"\n{card.cycle_verb} {card}",
         ).pay(cost)
-        return states.safe_getattr("cycle_" + helpers.slug(card))
+        return states.safe_getattr("cycle_" + card.slug)
 
     def draw(self, n):
         return self.clone(
             deck_index=self.deck_index + n,
-            hand=helpers.tup_add(self.hand, *self.top(n)),
-            notes=self.notes + ", draw " + helpers.pretty(*self.top(n)),
+            hand=self.hand + self.top(n),
+            notes=self.notes + f", draw {self.top(n)}",
         )
 
     def fetch(self, card, sacrifice=None, tapped=None):
@@ -310,13 +313,13 @@ class GameState(GameStateBase):
             return GameStates()
         battlefield = self.battlefield
         if sacrifice:
-            battlefield = helpers.tup_sub(battlefield, sacrifice)
+            battlefield = battlefield - sacrifice
         state = self.clone(
-            notes=self.notes + ", fetch " + helpers.pretty(card),
+            notes=self.notes + f", fetch {card}",
             battlefield=battlefield,
-            hand=helpers.tup_add(self.hand, card),
+            hand=self.hand + card,
         )
-        if tapped or carddata.enters_tapped(card):
+        if tapped or card.enters_tapped:
             return state.play_tapped(card)
         else:
             return state.play_untapped(card)
@@ -325,10 +328,10 @@ class GameState(GameStateBase):
         notes = self.notes
         hand = self.hand
         if mill > 0:
-            notes = self.notes + ", mill " + helpers.pretty(*self.top(mill))
+            notes = self.notes + f", mill {self.top(mill)}"
         if card:
-            hand = helpers.tup_add(self.hand, card)
-            notes += ", grab " + helpers.pretty(card)
+            hand = self.hand + card
+            notes += f", grab {card}"
         if note:
             notes += note
         return self.clone(
@@ -388,12 +391,12 @@ class GameState(GameStateBase):
             chancellors = [x for x in self.hand if x == "Chancellor of the Tangle"]
             states = states.add_mana(
                 len(chancellors)*"G",
-                note=", reveal " + helpers.pretty(*chancellors),
+                note=f", reveal {chancellors}",
             )
         # Handle suspended spells
         states = states.tick_down()
         if mana_debt:
-            states = states.pay(mana_debt, note=", pay " + str(mana_debt) + " for pact")
+            states = states.pay(mana_debt, note=f", pay {mana_debt} for pact")
         if self.on_the_play and self.turn == 0:
             return states
         else:
@@ -415,57 +418,57 @@ class GameState(GameStateBase):
         states = GameStates()
         for cards in itertools.combinations(options, n):
             states |= self.clone(
-                hand=helpers.tup_sub(self.hand, *cards),
-                notes=self.notes + ", discard " + helpers.pretty(*cards),
+                hand=self.hand - cards,
+                notes=self.notes + f", discard {cards}",
             )
         return states
 
     def play(self, card, **kwargs):
-        if not self.land_drops or not carddata.is_land(card) or not card in self.hand:
+        if not self.land_drops or not card.is_land or not card in self.hand:
             return GameStates()
         states = self.clone(
-            notes=self.notes + "\nplay " + helpers.pretty(card),
+            notes=self.notes + f"\nplay {card}",
             land_drops=self.land_drops - 1,
         )
-        if carddata.enters_tapped(card):
+        if card.enters_tapped:
             return states.play_tapped(card, **kwargs)
         else:
             return states.play_untapped(card, **kwargs)
 
     def play_tapped(self, card, note="", **kwargs):
         states = self.clone(
-            battlefield=helpers.tup_add(self.battlefield, card),
-            hand=helpers.tup_sub(self.hand, card),
+            battlefield=self.battlefield + card,
+            hand=self.hand - card,
             notes=self.notes + note,
         )
         for _ in range(self.battlefield.count("Amulet of Vigor")):
             states = states.tap(card, **kwargs)
-        return states.safe_getattr("play_" + helpers.slug(card))
+        return states.safe_getattr("play_" + card.slug)
 
     def play_untapped(self, card, **kwargs):
         states = self.clone(
-            hand=helpers.tup_sub(self.hand, card),
-            battlefield=helpers.tup_add(self.battlefield, card),
+            hand=self.hand - card,
+            battlefield=self.battlefield + card,
         ).tap(card, **kwargs)
-        return states.safe_getattr("play_" + helpers.slug(card))
+        return states.safe_getattr("play_" + card.slug)
 
     def report(self):
         print(self.notes.lstrip(", \n"))
 
     def sacrifice(self, card):
-        cost = carddata.sacrifice_cost(card)
+        cost = card.sacrifice_cost
         if card not in self.battlefield or cost is None or not self.mana_pool >= cost:
             return GameStates()
         states = self.clone(
-            battlefield=helpers.tup_sub(self.battlefield, card),
-            notes=self.notes + "\nsacrifice " + helpers.pretty(card),
+            battlefield=self.battlefield - card,
+            notes=self.notes + f"\nsacrifice {card}",
         ).pay(cost)
-        return getattr(states, "sacrifice_" + helpers.slug(card))()
+        return getattr(states, "sacrifice_" + card.slug)()
 
     def scry(self, n):
         if n == 1:
             return self.grab(None, mill=1) | self.clone(
-                notes=self.notes + ", leave " + helpers.pretty(*self.top(1)),
+                notes=self.notes + f", leave {self.top(1)}",
             )
         elif n == 2:
             states = GameStates()
@@ -474,30 +477,30 @@ class GameState(GameStateBase):
             after = self.deck_list[self.deck_index+2:]
             # Top top
             states |= self.clone(
-                notes=self.notes + ", leave " + helpers.pretty(*limbo),
+                notes=self.notes + f", leave {limbo}",
             )
             # Bottom top
             states |= self.clone(
                 deck_index=self.deck_index+1,
-                notes=self.notes + ", mill " + helpers.pretty(limbo[0]) + ", leave " + helpers.pretty(limbo[1]),
+                notes=self.notes + f", mill {limbo[0]}, leave {limbo[1]}",
             )
             # Bottom bottom
             states |= self.clone(
                 deck_index=self.deck_index+2,
-                notes=self.notes + ", mill " + helpers.pretty(*limbo),
+                notes=self.notes + f", mill {limbo}",
             )
             # Top top (flipped order)
             flipped_deck = before + limbo[::-1] + after
             states |= self.clone(
-                deck_list=flipped_deck,
-                notes=self.notes + ", leave " + helpers.pretty(*limbo[::-1]),
+                deck_list=Cards(flipped_deck, sort=False),
+                notes=self.notes + f", leave {limbo[::-1]}",
             )
             # Top bottom
             flipped_deck = before + limbo[::-1] + after
             states |= self.clone(
                 deck_index=self.deck_index+1,
-                deck_list=flipped_deck,
-                notes=self.notes + ", mill " + helpers.pretty(limbo[1]) + ", leave " + helpers.pretty(limbo[0]),
+                deck_list=Cards(flipped_deck, sort=False),
+                notes=self.notes + f", mill {limbo[1]}, leave {limbo[0]}",
             )
             return states
         else:
@@ -505,7 +508,7 @@ class GameState(GameStateBase):
 
     def safe_getattr(self, attr):
         try:
-            func = getattr(states, "cast_" + helpers.slug(card))
+            func = getattr(states, "cast_" + card.slug)
         except AttributeError:
             return GameStates([self])
         return func()
@@ -515,7 +518,7 @@ class GameState(GameStateBase):
         for m in carddata.taps_for(card):
             mana_pool = self.mana_pool + m
             if m and not silent:
-                mana_note = ", " + str(mana_pool) + " in pool" if mana_pool else ""
+                mana_note = f", {mana_pool} in pool" if mana_pool else ""
             else:
                 mana_note = ""
             states |= self.clone(
@@ -527,14 +530,14 @@ class GameState(GameStateBase):
     def tap_out(self):
         pools, new_pools = {self.mana_pool}, set()
         for card in self.battlefield:
-            if not carddata.taps_for(card):
+            if not card.taps_for:
                 continue
-            for m in carddata.taps_for(card):
+            for m in card.taps_for:
                 new_pools |= {pool+m for pool in pools}
             pools, new_pools = new_pools, set()
         states = GameStates()
         for pool in pools:
-            mana_note = ", " + str(pool) + " in pool" if pool else ""
+            mana_note = f", {pool} in pool" if pool else ""
             states |= self.clone(
                 mana_pool=pool,
                 notes=self.notes + mana_note,
@@ -554,8 +557,8 @@ class GameState(GameStateBase):
                 to_cast.append(card)
         if suspend:
             states = self.clone(
-                suspend=helpers.tup(suspend),
-                notes=self.notes + ", " + helpers.pretty(*suspend) + " ticking down",
+                suspend=Cards(suspend),
+                notes=self.notes + f", {suspend} ticking down",
             )
         else:
             states = self
@@ -564,28 +567,28 @@ class GameState(GameStateBase):
         return states
 
     def top(self, n):
-        return self.deck_list[self.deck_index:self.deck_index + n]
+        return Cards(self.deck_list[self.deck_index:self.deck_index + n])
 
     # ------------------------------------------------------------------
 
     def cast_allosaurus_rider(self):
         return self.clone(
             spells_cast=self.spells_cast+1,
-            battlefield=helpers.tup_add(self.battlefield, "Allosaurus Rider"),
+            battlefield=self.battlefield + "Allosaurus Rider",
         )
 
     def cast_amulet_of_vigor(self):
         return self.clone(
-            battlefield=helpers.tup_add(self.battlefield, "Amulet of Vigor"),
+            battlefield=self.battlefield + "Amulet of Vigor",
         )
 
     def cast_ancient_stirrings(self):
-        return self.grab_from_top(carddata.colorless, 5, best=True)
+        return self.grab_from_top(5, self.top(5).colorless)
 
     def cast_arboreal_grazer(self):
         states = GameStates()
-        for card in carddata.lands(self.hand):
-            states |= self.play_tapped(card, note=", play " + helpers.pretty(card))
+        for card in self.hand.lands:
+            states |= self.play_tapped(card, note=f", play {card}")
         # If we have no lands in hand, there's no reason to cast Grazer.
         return states
 
@@ -593,19 +596,19 @@ class GameState(GameStateBase):
         if "Azusa, Lost but Seeking" in self.battlefield:
             return GameStates()
         return self.clone(
-            battlefield=helpers.tup_add(self.battlefield, "Azusa, Lost but Seeking"),
+            battlefield=self.battlefield + "Azusa, Lost but Seeking",
             land_drops=self.land_drops + 2,
         )
 
     def cast_bond_of_flourishing(self):
-        return self.grab_from_top(carddata.permanents, 3, best=True)
+        return self.grab_from_top(3, self.top(3).permanents)
 
     def cast_chancellor_of_the_tangle(self):
         return GameStates([self])
 
     def cast_chromatic_star(self):
         return self.clone(
-            battlefield=helpers.tup_add(self.battlefield, "Chromatic Star"),
+            battlefield=self.battlefield + "Chromatic Star",
         )
 
     def cast_eldrich_evolution(self):
@@ -613,7 +616,7 @@ class GameState(GameStateBase):
 
     def cast_expedition_map(self):
         return self.clone(
-            battlefield=helpers.tup_add(self.battlefield, "Expedition Map"),
+            battlefield=self.battlefield + "Expedition Map",
         )
 
     def cast_explore(self):
@@ -631,10 +634,10 @@ class GameState(GameStateBase):
         return self.clone(done=True)
 
     def cast_oath_of_nissa(self):
-        return self.grab_from_top(carddata.creatures_lands, 3, best=True)
+        return self.grab_from_top(3, self.top(3).creatures_lands)
 
     def cast_once_upon_a_time(self):
-        return self.grab_from_top(carddata.creatures_lands, 5, best=True)
+        return self.grab_from_top(5, self.top(5).creatures_lands)
 
     def cast_opt(self):
         states = GameStates()
@@ -656,7 +659,7 @@ class GameState(GameStateBase):
 
     def cast_sakura_tribe_scout(self):
         return self.clone(
-            battlefield=helpers.tup_add(self.battlefield, "Sakura-Tribe Scout"),
+            battlefield=self.battlefield + "Sakura-Tribe Scout",
         )
 
     def cast_search_for_tomorrow(self):
@@ -669,14 +672,14 @@ class GameState(GameStateBase):
         return self.draw(1).scry(2)
 
     def cast_sleight_of_hand(self):
-        return self.grab_from_top(None, 2, best=True)
+        return self.grab_from_top(2, None)
 
     def cast_summer_bloom(self):
         return self.clone(land_drops=self.land_drops + 3)
 
     def cast_summoners_pact(self):
         states = GameStates()
-        for card in carddata.green_creatures(self.deck_list, best=True):
+        for card in self.deck_list.green_creatures:
             # You never need to Pact for a card that's in your hand.
             # Even if you need multiple Grazers, you can grab the second
             # after you play the first.
@@ -685,7 +688,7 @@ class GameState(GameStateBase):
             if card == "Azusa, Lost but Seeking" and "Azusa, Lost but Seeking" in self.battlefield:
                 continue
             states |= self.grab(card)
-        return states.clone(mana_debt=self.mana_debt + Mana("2GG"))
+        return states.clone(mana_debt=self.mana_debt + "2GG")
 
     def cast_sylvan_scrying(self):
         # The computer has superhuman "instincts" about the order of the
@@ -704,7 +707,7 @@ class GameState(GameStateBase):
         # "fast" win
         return self.clone(
             done=True,
-            battlefield=helpers.tup_add(self.battlefield, "Amulet of Vigor"),
+            battlefield=self.battlefield + "Amulet of Vigor",
         )
 
     def cast_tragic_lesson(self):
@@ -712,17 +715,17 @@ class GameState(GameStateBase):
 
     def cast_trinket_mage(self):
         states = GameStates()
-        for card in carddata.trinkets(self.deck_list, best=True):
+        for card in self.deck_list.trinkets:
             states |= self.grab(card)
         return states
 
     def cast_wild_cantor(self):
         return self.clone(
-            battlefield=helpers.tup_add(self.battlefield, "Wild Cantor"),
+            battlefield=self.battlefield + "Wild Cantor",
         )
 
     def cycle_allosaurus_rider(self):
-        cards = [x for x in self.hand if carddata.is_green(x)]
+        cards = [x for x in self.hand if x.is_green]
         return self.pitch(2, options=cards).cast_allosaurus_rider()
 
     def cycle_once_upon_a_time(self):
@@ -733,7 +736,7 @@ class GameState(GameStateBase):
 
     def cycle_search_for_tomorrow(self):
         return self.clone(
-            suspend=helpers.tup_add(self.suspend, "Search for Tomorrow.."),
+            suspend=self.suspend + "Search for Tomorrow..",
         )
 
     def cycle_simian_spirit_guide(self):
@@ -741,7 +744,7 @@ class GameState(GameStateBase):
 
     def cycle_tolaria_west(self):
         states = GameStates()
-        for card in carddata.zeros(self.deck_list, best=True):
+        for card in self.deck_list.zeros:
             states |= self.grab(card)
         return states
 

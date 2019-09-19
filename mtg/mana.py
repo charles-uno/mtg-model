@@ -67,6 +67,10 @@ class Mana(ManaBase):
         generic_cost = cost.total - cost.green - cost.blue
         generic_self = self.total - self.green - self.blue
         generic_debt = generic_cost - generic_self
+
+
+        # TODO -- use itertools to look at this. Means we can consider more colors easily if we want
+
         # If we have enough generic sitting around, it's easy
         if generic_debt <= 0:
             blue = self.blue - cost.blue

@@ -35,14 +35,14 @@ def simulate(name, max_turns=4, debug=False):
         return True
 
 
-def load_deck(name):
-    path = "decks/%s.in" % name
-    cards = []
+def load_deck(deckname):
+    path = f"decks/{deckname}.in"
+    cardnames = []
     with open(path, "r") as handle:
         for line in handle:
             if not line.strip() or line.startswith("#"):
                 continue
-            n, name = line.rstrip().split(None, 1)
-            cards += int(n) * [name]
-    random.shuffle(cards)
-    return tuple(cards)
+            n, cardname = line.rstrip().split(None, 1)
+            cardnames += int(n) * [cardname]
+    random.shuffle(cardnames)
+    return cardnames

@@ -7,7 +7,6 @@ import sys
 
 import mtg
 
-
 def main():
     args = parse_args()
     # If reporting results, do so.
