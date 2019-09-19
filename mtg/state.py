@@ -309,18 +309,13 @@ class GameState(GameStateBase):
             notes=self.notes + f", draw {self.top(n)}",
         )
 
-    def fetch(self, card, sacrifice=None, tapped=None):
-        if card not in self.deck_list:
-            return GameStates()
-        battlefield = self.battlefield
-        if sacrifice:
-            battlefield = battlefield - sacrifice
+    def fetch(self, card, tapped=None):
         state = self.clone(
             notes=self.notes + f", fetch {card}",
-            battlefield=battlefield,
+            battlefield=self.battlefield,
             hand=self.hand + card,
         )
-        if tapped or card.enters_tapped:
+        if tapped or Card(card).enters_tapped:
             return state.play_tapped(card)
         else:
             return state.play_untapped(card)
