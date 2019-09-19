@@ -29,10 +29,11 @@ class Cards(tuple):
 
 
     def __add__(self, other):
-        if isinstance(other, (str, Card)):
+        if isinstance(other, str):
+            other = Card(other)
+        if isinstance(other, Card):
             other = [other]
         return Cards(sorted(list(self) + list(other)))
-
 
 
     def __sub__(self, other):
@@ -41,6 +42,15 @@ class Cards(tuple):
         new_seq = list(self)
         [new_seq.remove(Card(x)) for x in other]
         return Cards(sorted(new_seq))
+
+
+    def __contains__(self, card):
+        return tuple.__contains__(self, Card(card))
+
+
+    def count(self, card):
+        return tuple.count(self, Card(card))
+
 
 
     @property
@@ -83,6 +93,46 @@ class Cards(tuple):
     @property
     def zeros(self):
         return {x for x in self if x.cmc == 0}
+
+    @property
+    def best(self):
+        """If Ancient Stirrings shows Gemstone Mine and Radiant
+        Fountain, there's no reason for the model to ever take Radiant
+        Fountain. This has a big impact on performance -- we're
+        kneecapping the exponential explosion. Notably, the possibility
+        of multiple Amulets means we do sometimes prefer tapped lands
+        over untapped.
+        """
+        cards = set(self)
+        if "Gemstone Mine" in cards:
+            cards -= {
+                "Forest",
+                "Island",
+                "Radiant Fountain",
+            }
+        if "Forest" in cards:
+            cards -= {
+                "Radiant Fountain",
+            }
+        if "Island" in cards:
+            cards -= {
+                "Radiant Fountain",
+            }
+        if "Khalni Garden" in cards:
+            cards -= {
+                "Bojuka Bog",
+            }
+        if "Simic Growth Chamber" in cards:
+            cards -= {
+                "Selesnya Sanctuary",
+                "Boros Garrison",
+            }
+        if "Selesnya Sanctuary" in cards:
+            cards -= {
+                "Boros Garrison",
+            }
+        return Cards(cards)
+
 
 
 

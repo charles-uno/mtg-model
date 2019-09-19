@@ -17,7 +17,6 @@ import collections
 import itertools
 import time
 
-from . import carddata
 from . import helpers
 from .mana import Mana
 from .card import Card, Cards
@@ -277,9 +276,9 @@ class GameState(GameStateBase):
 
     def check_tron(self):
         tron = {
-            "Urza's Mine",
-            "Urza's Power Plant",
-            "Urza's Tower",
+            Card("Urza's Mine"),
+            Card("Urza's Power Plant"),
+            Card("Urza's Tower"),
         }
         tron_have = set(self.battlefield) & tron
         tron_need = tron - tron_have
@@ -326,49 +325,23 @@ class GameState(GameStateBase):
         else:
             return state.play_untapped(card)
 
-    def grab(self, card=None, mill=0, note=None):
-        notes = self.notes
-        hand = self.hand
-        if mill > 0:
-            notes = self.notes + f", mill {self.top(mill)}"
-        if card:
-            hand = self.hand + card
-            notes += f", grab {card}"
-        if note:
-            notes += note
+    def grab(self, card):
         return self.clone(
-            deck_index=self.deck_index + mill,
-            hand=hand,
-            notes=notes,
+            hand=self.hand + card,
+            notes=self.notes + f", grab {card}",
         )
 
-    def tron_choices(self, cards):
-        # The computer has superhuman "instincts" about the order of the
-        # deck. Force it to choose arbitrarily.
-        tron = {
-            "Urza's Mine",
-            "Urza's Power Plant",
-            "Urza's Tower",
-        }
-        tron_have = tron & set(self.battlefield + self.hand)
-        non_tron = cards - tron
-        tron_options = (set(cards) & tron) - tron_have
-        if tron_options:
-            return set([sorted(tron_options)[0]]) | non_tron
-        else:
-            return non_tron
-
-    def grab_from_top(self, card_filter, n, **kwargs):
+    def grabs(self, cards):
         states = GameStates()
-        if card_filter:
-            cards = card_filter(self.top(n), **kwargs)
-        else:
-            cards = set(self.top(n))
-        # The computer has superhuman "instincts" about the order of the
-        # deck. Force it to choose arbitrarily.
-        for card in self.tron_choices(cards):
-            states |= self.grab(card, mill=n)
-        return states or self.grab(mill=n, note=", whiff")
+        for card in cards:
+            states |= self.grab(card)
+        return states
+
+    def mill(self, n):
+        return self.clone(
+            deck_index=self.deck_index + n,
+            notes=self.notes + f", mill {self.top(n)}",
+        )
 
     def pass_turn(self):
         # Optimizations go here. If we played a pact on turn 1, bail. If
@@ -385,7 +358,7 @@ class GameState(GameStateBase):
             land_drops=land_drops,
             mana_debt=Mana(),
             mana_pool=Mana(),
-            notes=self.notes + "\n---- turn " + str(self.turn+1),
+            notes=self.notes + f"\n---- turn {self.turn+1}",
             turn=self.turn+1,
         ).tap_out()
         # Chancellor of the Tangle
@@ -517,7 +490,7 @@ class GameState(GameStateBase):
 
     def tap(self, card, silent=False):
         states = GameStates()
-        for m in carddata.taps_for(card):
+        for m in card.taps_for:
             mana_pool = self.mana_pool + m
             if m and not silent:
                 mana_note = f", {mana_pool} in pool" if mana_pool else ""
@@ -571,6 +544,22 @@ class GameState(GameStateBase):
     def top(self, n):
         return Cards(self.deck_list[self.deck_index:self.deck_index + n])
 
+    def tron_choices(self, cards):
+        # The computer has superhuman "instincts" about the order of the
+        # deck. Force it to choose arbitrarily.
+        tron = {
+            Card("Urza's Mine"),
+            Card("Urza's Power Plant"),
+            Card("Urza's Tower"),
+        }
+        tron_have = tron & set(self.battlefield + self.hand)
+        non_tron = cards - tron
+        tron_options = (set(cards) & tron) - tron_have
+        if tron_options:
+            return set([sorted(tron_options)[0]]) | non_tron
+        else:
+            return non_tron
+
     # ------------------------------------------------------------------
 
     def cast_allosaurus_rider(self):
@@ -585,7 +574,8 @@ class GameState(GameStateBase):
         )
 
     def cast_ancient_stirrings(self):
-        return self.grab_from_top(5, self.top(5).colorless)
+        cards = self.tron_choices(self.top(3).best.colorless)
+        return self.mill(5).grabs(cards)
 
     def cast_arboreal_grazer(self):
         states = GameStates()
@@ -603,7 +593,7 @@ class GameState(GameStateBase):
         )
 
     def cast_bond_of_flourishing(self):
-        return self.grab_from_top(3, self.top(3).permanents)
+        return self.grab_from_top(3, self.top(3).best.permanents)
 
     def cast_chancellor_of_the_tangle(self):
         return GameStates([self])
@@ -636,15 +626,17 @@ class GameState(GameStateBase):
         return self.clone(done=True)
 
     def cast_oath_of_nissa(self):
-        return self.grab_from_top(3, self.top(3).creatures_lands)
+        cards = self.tron_choices(self.top(3).best.creatures_lands)
+        return self.mill(3).grabs(cards)
 
     def cast_once_upon_a_time(self):
-        return self.grab_from_top(5, self.top(5).creatures_lands)
+        cards = self.tron_choices(self.top(5).best.creatures_lands)
+        return self.mill(5).grabs(cards)
 
     def cast_opt(self):
         states = GameStates()
         for i in range(2):
-            states |= self.grab(card=None, mill=i).draw(1)
+            states |= self.mill(i).draw(1)
         return states
 
     def cast_primeval_titan(self):
@@ -654,10 +646,7 @@ class GameState(GameStateBase):
         return self.add_mana("3")
 
     def cast_sakura_tribe_elder(self):
-        states = GameStates()
-        for card in {"Forest", "Mountain"}:
-            states |= self.fetch(card, tapped=True)
-        return states
+        return self.fetch("Forest", tapped=True)
 
     def cast_sakura_tribe_scout(self):
         return self.clone(
@@ -665,10 +654,7 @@ class GameState(GameStateBase):
         )
 
     def cast_search_for_tomorrow(self):
-        states = GameStates()
-        for card in {"Forest", "Mountain"}:
-            states |= self.fetch(card)
-        return states
+        return self.fetch("Forest")
 
     def cast_serum_visions(self):
         return self.draw(1).scry(2)
@@ -696,11 +682,7 @@ class GameState(GameStateBase):
         # The computer has superhuman "instincts" about the order of the
         # deck. It knows what we're about to draw. Force it to make the
         # choice arbitrarily.
-        cards = carddata.lands(self.deck_list)
-        states = GameStates()
-        for card in self.tron_choices(cards):
-            states |= self.grab(card)
-        return states
+        return self.grabs(self.tron_choices(self.deck_list.best.lands))
 
     def cast_through_the_breach(self):
         if "Primeval Titan" not in self.hand:
@@ -716,10 +698,7 @@ class GameState(GameStateBase):
         return self.draw(2).pitch(1) | self.draw(2).bounce_land()
 
     def cast_trinket_mage(self):
-        states = GameStates()
-        for card in self.deck_list.trinkets:
-            states |= self.grab(card)
-        return states
+        return self.grabs(self.deck_list.trinkets)
 
     def cast_wild_cantor(self):
         return self.clone(
@@ -745,10 +724,7 @@ class GameState(GameStateBase):
         return self.add_mana("1")
 
     def cycle_tolaria_west(self):
-        states = GameStates()
-        for card in self.deck_list.zeros:
-            states |= self.grab(card)
-        return states
+        return self.grabs(self.deck_list.best.zeros)
 
     def cycle_tranquil_thicket(self):
         return self.draw(1)
@@ -764,21 +740,6 @@ class GameState(GameStateBase):
 
     def play_temple_of_mystery(self):
         return self.scry(1)
-
-    def play_urzas_mine(self):
-        return self.check_tron()
-
-    def play_urzas_power_plant(self):
-        return self.check_tron()
-
-    def play_urzas_tower(self):
-        return self.check_tron()
-
-    def play_wooded_foothills(self):
-        states = GameStates()
-        for card in {"Forest", "Mountain", "Stomping Ground"}:
-            states |= self.fetch(card)
-        return states
 
     def play_zhalfirin_void(self):
         return self.scry(1)
