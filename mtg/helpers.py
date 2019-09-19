@@ -31,24 +31,6 @@ def pretty(*cards, color=True):
     return " ".join(blurbs)
 
 
-def rmchars(text, chars):
-    for c in chars:
-        text = text.replace(c, "")
-    return text
-
-
-def tup(*args, **kwargs):
-    return tuple(sorted(*args, **kwargs))
-
-
-def tup_add(seq, *elts):
-    return tup(seq + elts)
-
-
-def tup_sub(seq, *elts):
-    new_seq = list(seq)
-    [new_seq.remove(x) for x in elts]
-    return tup(new_seq)
 
 
 def highlight(text, color=None):

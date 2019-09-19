@@ -9,7 +9,6 @@ with open("carddata.yaml") as handle:
     CARDS = yaml.safe_load(handle)
 
 
-
 class Cards(tuple):
 
     def __new__(self, names, sort=True):
@@ -94,8 +93,6 @@ class Cards(tuple):
 
 
 
-
-
 CardBase = collections.namedtuple("CardBase", "name slug show")
 
 
@@ -113,15 +110,22 @@ class Card(CardBase):
             cls._instances[name] = CardBase.__new__(cls, name, slug, show)
         return cls._instances[name]
 
-
     def __repr__(self):
         return "Card(" + repr(self.name) + ")"
 
     def __str__(self):
-        return self.show
+        if self.is_green:
+            return highlight(self.show, "green")
+        elif self.is_colorless:
+            return highlight(self.show, "brown")
+        elif self.is_blue:
+            return highlight(self.show, "blue")
+        elif self.is_red:
+            return highlight(self.show, "red")
+        else:
+            return self.show
 
-
-
+    # TODO -- Generate the fields in the named tuple dynamically so we don't have to spell this all out.
 
 
     @property
@@ -210,6 +214,21 @@ class Card(CardBase):
     def enters_tapped(self):
         return CARDS[self.name].get("enters_tapped")
 
+
+
+
+
+
+def highlight(text, color=None):
+    if color == "green":
+        return "\033[32m" + text + "\033[0m"
+    if color == "blue":
+        return "\033[36m" + text + "\033[0m"
+    if color == "brown":
+        return "\033[33m" + text + "\033[0m"
+    if color == "red":
+        return "\033[31m" + text + "\033[0m"
+    return text
 
 
 

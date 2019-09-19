@@ -77,9 +77,11 @@ class GameStates(set):
         """Check if the solution we found uses the given card."""
         if card is None:
             return False
+        elif card == "":
+            return True
         else:
             for state in self:
-                return helpers.pretty(card, color=False) in state.notes
+                return str(Card(card)) in state.notes
 
     @property
     def notes(self):
