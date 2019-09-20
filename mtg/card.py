@@ -261,6 +261,7 @@ class Card(CardBase):
             return None
         return [Mana(x) for x in CARDS[self.name].get("taps_for").split(",")]
 
+    @property
     def enters_tapped(self):
         return CARDS[self.name].get("enters_tapped")
 

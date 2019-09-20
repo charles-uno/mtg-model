@@ -405,11 +405,11 @@ class GameState(GameStateBase):
         else:
             return states.play_untapped(card, **kwargs)
 
-    def play_tapped(self, card, note="", **kwargs):
+    def play_tapped(self, card, **kwargs):
         states = self.clone(
             battlefield=self.battlefield + card,
             hand=self.hand - card,
-            notes=self.notes + note,
+            notes=self.notes + " TAPPED",
         )
         for _ in range(self.battlefield.count("Amulet of Vigor")):
             states = states.tap(card, **kwargs)
