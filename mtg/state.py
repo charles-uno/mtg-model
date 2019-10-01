@@ -17,7 +17,6 @@ import collections
 import itertools
 import time
 
-from . import helpers
 from .mana import Mana
 from .card import Card, Cards
 
@@ -132,7 +131,7 @@ GAME_STATE_DEFAULTS = {
     "overflowed": 0,
     "land_drops": 0,
     "spells_cast": 0,
-    "suspend": (),
+    "suspended": (),
     "turn": 0,
 }
 
@@ -184,10 +183,11 @@ class GameState(GameStateBase):
         if self.done:
             return GameStates([self])
         states = self.pass_turn()
+        for card in set(self.hand.lands):
+            states |= self.play(card)
         for card in set(self.hand):
             states |= self.cast(card)
             states |= self.cycle(card)
-            states |= self.play(card)
         for card in set(self.battlefield):
             states |= self.sacrifice(card)
         return states
@@ -235,8 +235,7 @@ class GameState(GameStateBase):
 
     def add_mana(self, m, note=""):
         pool = self.mana_pool + m
-        if not note:
-            note = f", {pool} in pool"
+        note += f", {pool} in pool"
         return self.clone(
             mana_pool=pool,
             notes=self.notes + note
@@ -310,12 +309,13 @@ class GameState(GameStateBase):
         )
 
     def fetch(self, card, tapped=None):
+        card = Card(card)
         state = self.clone(
             notes=self.notes + f", fetch {card}",
             battlefield=self.battlefield,
             hand=self.hand + card,
         )
-        if tapped or Card(card).enters_tapped:
+        if tapped or card.enters_tapped:
             return state.play_tapped(card)
         else:
             return state.play_untapped(card)
@@ -361,7 +361,7 @@ class GameState(GameStateBase):
             chancellors = [x for x in self.hand if x == "Chancellor of the Tangle"]
             states = states.add_mana(
                 len(chancellors)*"G",
-                note=f", reveal {chancellors}",
+                note=f", reveal {Cards(chancellors)}",
             )
         # Handle suspended spells
         states = states.tick_down()
@@ -389,12 +389,14 @@ class GameState(GameStateBase):
         for cards in itertools.combinations(options, n):
             states |= self.clone(
                 hand=self.hand - cards,
-                notes=self.notes + f", discard {cards}",
+                notes=self.notes + f", discard {Cards(cards)}",
             )
         return states
 
     def play(self, card, **kwargs):
-        if not self.land_drops or not card.is_land or not card in self.hand:
+        if "land" not in card.types:
+            raise ValueError(f"cannot play nonland {card} as land")
+        if not self.land_drops or not card in self.hand:
             return GameStates()
         states = self.clone(
             notes=self.notes + f"\nplay {card}",
@@ -483,6 +485,11 @@ class GameState(GameStateBase):
             return GameStates([self])
         return func()
 
+    def suspend(self, card, n):
+        return self.clone(
+            suspended=self.suspended + ((Card(card), n),),
+        )
+
     def tap(self, card, silent=False):
         states = GameStates()
         for m in card.taps_for:
@@ -515,20 +522,21 @@ class GameState(GameStateBase):
         return states
 
     def tick_down(self):
-        if not self.suspend:
+        if not self.suspended:
             return GameStates([self])
-        suspend = []
+        suspended = []
         to_cast = []
-        for card in self.suspend:
-            card = card.replace(".", "", 1)
-            if "." in card:
-                suspend.append(card)
+        tick_notes = Cards([])
+        for card, n in self.suspended:
+            if n > 0:
+                tick_notes += card
+                suspended.append((card, n-1))
             else:
                 to_cast.append(card)
-        if suspend:
+        if suspended:
             states = self.clone(
-                suspend=Cards(suspend),
-                notes=self.notes + f", {suspend} ticking down",
+                suspended=tuple(sorted(suspended)),
+                notes=self.notes + f", {tick_notes} ticking down",
             )
         else:
             states = self
@@ -701,7 +709,7 @@ class GameState(GameStateBase):
         )
 
     def cycle_allosaurus_rider(self):
-        cards = [x for x in self.hand if x.is_green]
+        cards = [x for x in self.hand.greens]
         return self.pitch(2, options=cards).cast_allosaurus_rider()
 
     def cycle_once_upon_a_time(self):
@@ -711,9 +719,7 @@ class GameState(GameStateBase):
         return self.clone(spells_cast=self.spells_cast+1).cast_once_upon_a_time()
 
     def cycle_search_for_tomorrow(self):
-        return self.clone(
-            suspend=self.suspend + "Search for Tomorrow..",
-        )
+        return self.suspend("Search for Tomorrow", 2)
 
     def cycle_simian_spirit_guide(self):
         return self.add_mana("1")

@@ -51,44 +51,42 @@ class Cards(tuple):
     def count(self, card):
         return tuple.count(self, Card(card))
 
-
-
-    @property
-    def creatures(self):
-        return {x for x in self if x.is_creature}
-
     @property
     def basic_lands(self):
-        return {x for x in self if x.is_basic_land}
-
-    @property
-    def lands(self):
-        """For fetching and searching, we never want to take a worse
-        card. But with bounce lands, deciding which land to bounce is
-        nontrivial. With a bunch of Amulets on the table, bouncing
-        Khalni Garden can be better than bouncing Forest, etc.
-        """
-        return {x for x in self if x.is_land}
-
-    @property
-    def creatures_lands(self):
-        return {x for x in self if x.is_creature or x.is_land}
-
-    @property
-    def green_creatures(self):
-        return {x for x in self if x.is_green and x.is_creature}
-
-    @property
-    def permanents(self):
-        return {x for x in self if x.is_permanent}
+        return {x for x in self if "basic" in x.types and "land" in x.types}
 
     @property
     def colorless(self):
-        return {x for x in self if x.is_colorless}
+        return {x for x in self if not x.colors}
+
+    @property
+    def creatures(self):
+        return {x for x in self if "creature" in x.types}
+
+    @property
+    def creatures_lands(self):
+        return self.creatures | self.lands
+
+    @property
+    def lands(self):
+        return {x for x in self if "land" in x.types}
+
+    @property
+    def greens(self):
+        return {x for x in self if "green" in x.colors}
+
+    @property
+    def green_creatures(self):
+        return {x for x in self.creatures & self.greens}
+
+    @property
+    def permanents(self):
+        types = ("artifact", "creature", "enchantment", "land")
+        return {x for x in self if any(t in x.types for t in types)}
 
     @property
     def trinkets(self):
-        return {x for x in self if x.is_artifact and x.cmc < 2}
+        return {x for x in self if "artifact" in x.types and x.cmc < 2}
 
     @property
     def zeros(self):
@@ -134,17 +132,26 @@ class Cards(tuple):
         return Cards(cards)
 
 
+# ----------------------------------------------------------------------
 
 
+CARD_FIELDS = [
+    "cmc",
+    "colors",
+    "cost",
+    "cycle_cost",
+    "cycle_verb",
+    "enters_tapped",
+    "name",
+    "sacrifice_cost",
+    "show",
+    "slug",
+    "taps_for",
+    "types",
+]
 
 
-
-
-
-
-
-CardBase = collections.namedtuple("CardBase", "name slug show")
-
+CardBase = collections.namedtuple("CardBase", " ".join(CARD_FIELDS))
 
 
 class Card(CardBase):
@@ -155,119 +162,73 @@ class Card(CardBase):
         if isinstance(name, Card):
             return name
         if name not in cls._instances:
-            slug = rmchars(name, "',").lower().replace(" ", "_").replace("-", "_")
-            show = rmchars(name, "-' ,.")
-            cls._instances[name] = CardBase.__new__(cls, name, slug, show)
+            params = {}
+            raw_colors = CARDS[name].get("color")
+            colors = raw_colors.split(",") if raw_colors else ()
+            params["colors"] = tuple(sorted(colors))
+            cost = CARDS[name].get("cost")
+            params["cost"] = None if cost is None else Mana(cost)
+            params["cmc"] = 0 if cost is None else params["cost"].total
+            cost = CARDS[name].get("cycle_cost")
+            params["cycle_cost"] = None if cost is None else Mana(cost)
+            params["cycle_verb"] = CARDS[name].get("cycle_verb", "discard")
+            params["enters_tapped"] = CARDS[name].get("enters_tapped")
+            params["name"] = name
+            params["show"] = rmchars(name, "-' ,.")
+            params["slug"] = rmchars(name, "',").lower().replace(" ", "_").replace("-", "_")
+            types = set(CARDS[name]["type"].split(","))
+            params["types"] = tuple(sorted(types))
+            cost = CARDS[name].get("sacrifice_cost")
+            params["sacrifice_cost"] = None if cost is None else Mana(cost)
+            taps_for = CARDS[name].get("taps_for")
+            if taps_for is None:
+                params["taps_for"] = None
+            else:
+                taps_for_set = {Mana(x) for x in taps_for.split(",")}
+                params["taps_for"] = tuple(sorted(taps_for_set))
+            values = [v for k, v in sorted(params.items())]
+            cls._instances[name] = CardBase.__new__(cls, *values)
+#            print("making a Card object for", name, params)
         return cls._instances[name]
 
     def __repr__(self):
         return "Card(" + repr(self.name) + ")"
 
     def __str__(self):
-        if self.is_green:
+        if "green" in self.colors:
             return highlight(self.show, "green")
-        elif self.is_colorless:
+        elif not self.colors:
             return highlight(self.show, "brown")
-        elif self.is_blue:
+        elif "blue" in self.colors:
             return highlight(self.show, "blue")
-        elif self.is_red:
+        elif "red" in self.colors:
             return highlight(self.show, "red")
         else:
             return self.show
 
-    # TODO -- Generate the fields in the named tuple dynamically so we don't have to spell this all out.
+    def __hash__(self):
+        return tuple.__hash__(self)
 
-
-    @property
-    def is_artifact(self):
-        return "artifact" in self.types
-
-    @property
-    def is_basic_land(self):
-        return "basic" in self.types and "land" in self.types
-
-    @property
-    def is_blue(self):
-        return "blue" in self.colors
-
-    @property
-    def is_colorless(self):
-        return not self.colors
-
-    @property
-    def is_creature(self):
-        return "creature" in self.types
-
-    @property
-    def is_green(self):
-        return "green" in self.colors
-
-    @property
-    def is_land(self):
-        return "land" in self.types
-
-    @property
-    def is_permanent(self):
-        types = ("artifact", "creature", "enchantment", "land")
-        return any(x in self.types for x in types)
-
-    @property
-    def is_red(self):
-        return "red" in self.colors
-
-
-    @property
-    def colors(self):
-        colors = CARDS[self.name].get("color")
-        return colors.split(",") if colors else ()
-
-    @property
-    def types(self):
-        return set(CARDS[self.name]["type"].split(","))
-
-    @property
-    def cycle_cost(self):
-        cost = CARDS[self.name].get("cycle_cost")
-        return cost if cost is None else Mana(cost)
-
-    @property
-    def cycle_verb(self):
-        return CARDS[self.name].get("cycle_verb", "discard")
-
-    @property
-    def sacrifice_cost(self):
-        cost = CARDS[self.name].get("sacrifice_cost")
-        return cost if cost is None else Mana(cost)
-
-    @property
-    def cost(self):
-        try:
-            cost = CARDS[self.name].get("cost")
-        except KeyError:
-            print(self, repr(self))
-            raise
-        return cost if cost is None else Mana(cost)
-
-    @property
-    def cmc(self):
-        if self.cost is None:
-            return 0
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return other == self.name
         else:
-            return self.cost.total
+            return other.name == self.name
 
-    @property
-    def taps_for(self):
-        if CARDS[self.name].get("taps_for") is None:
-            return None
-        return [Mana(x) for x in CARDS[self.name].get("taps_for").split(",")]
+    def __ge__(self, other):
+        return self.name >= other.name
 
-    @property
-    def enters_tapped(self):
-        return CARDS[self.name].get("enters_tapped")
+    def __gt__(self, other):
+        return self.name > other.name
 
+    def __lt__(self, other):
+        return self.name < other.name
 
+    def __le__(self, other):
+        return self.name <= other.name
 
-
+    def __ne__(self, other):
+        return self.name != other.name
 
 
 def highlight(text, color=None):
@@ -280,8 +241,6 @@ def highlight(text, color=None):
     if color == "red":
         return "\033[31m" + text + "\033[0m"
     return text
-
-
 
 
 def rmchars(text, chars):
