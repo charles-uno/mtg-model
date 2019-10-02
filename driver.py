@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import multiprocessing as mp
 import os
 import random
 import sys
@@ -13,19 +14,41 @@ def main():
     if args.results:
         return mtg.print_stats(args.decks, verbose=args.verbose)
     # If given multiple names, choose randomly each time.
-    namewidth = max(len(x) for x in args.decks)
     trial = 0
     while True:
-        trial += 1
-        name = random.choice(args.decks)
-        print(str(trial).rjust(4), end=" ")
-        print(name.rjust(namewidth), end=" ")
-        sys.stdout.flush()
-        # If we're debugging, just converge once
-        if mtg.simulate(name, debug=args.debug):
-            break
-        if args.ntrials and trial >= args.ntrials:
-            break
+
+        """
+        if args.jobs > 1:
+            batch_size = 4*args.jobs
+            trial += batch_size
+            print(trial)
+            pool = mp.Pool(args.jobs)
+            jobs = []
+            for _ in range(batch_size):
+                name = random.choice(args.decks)
+                jobs.append(
+                    pool.apply_async(mtg.simulate, (name,))
+                )
+            results = [x.get() for x in jobs]
+            if args.debug:
+                for gs in results:
+                    if not gs:
+                        continue
+                    gs.report()
+                    break
+            if args.ntrials and trial >= args.ntrials:
+                break
+        else:
+        """
+
+            trial += 1
+            name = random.choice(args.decks)
+            result = mtg.simulate(name)
+            if result and args.debug:
+                result.report()
+                break
+            if args.ntrials and trial >= args.ntrials:
+                break
 
 
 def all_decks():
@@ -46,10 +69,15 @@ def parse_args():
     parser.add_argument(
         "-d",
         "--debug",
-        default=None,
-        nargs="?",
-        const="",
-        help="Run until we find a hand that works, then print it out. If given a card name, keep going until we see a line that uses this card",
+        action="store_true",
+        help="Run until we find a hand that works, then print it out",
+    )
+    parser.add_argument(
+        "-j",
+        "--jobs",
+        type=int,
+        default=1,
+        help="Run in parallel using this many threads",
     )
     parser.add_argument(
         "-n",
@@ -73,7 +101,4 @@ def parse_args():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("Killed")
+    main()

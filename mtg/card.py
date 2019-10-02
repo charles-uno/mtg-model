@@ -27,14 +27,12 @@ class Cards(tuple):
                 blurbs.append(str(card))
         return " ".join(blurbs)
 
-
     def __add__(self, other):
         if isinstance(other, str):
             other = Card(other)
         if isinstance(other, Card):
             other = [other]
         return Cards(sorted(list(self) + list(other)))
-
 
     def __sub__(self, other):
         if isinstance(other, (str, Card)):
@@ -43,10 +41,8 @@ class Cards(tuple):
         [new_seq.remove(Card(x)) for x in other]
         return Cards(sorted(new_seq))
 
-
     def __contains__(self, card):
         return tuple.__contains__(self, Card(card))
-
 
     def count(self, card):
         return tuple.count(self, Card(card))
@@ -135,23 +131,7 @@ class Cards(tuple):
 # ----------------------------------------------------------------------
 
 
-CARD_FIELDS = [
-    "cmc",
-    "colors",
-    "cost",
-    "cycle_cost",
-    "cycle_verb",
-    "enters_tapped",
-    "name",
-    "sacrifice_cost",
-    "show",
-    "slug",
-    "taps_for",
-    "types",
-]
-
-
-CardBase = collections.namedtuple("CardBase", " ".join(CARD_FIELDS))
+CardBase = collections.namedtuple("CardBase", "name show slug")
 
 
 class Card(CardBase):
@@ -162,33 +142,9 @@ class Card(CardBase):
         if isinstance(name, Card):
             return name
         if name not in cls._instances:
-            params = {}
-            raw_colors = CARDS[name].get("color")
-            colors = raw_colors.split(",") if raw_colors else ()
-            params["colors"] = tuple(sorted(colors))
-            cost = CARDS[name].get("cost")
-            params["cost"] = None if cost is None else Mana(cost)
-            params["cmc"] = 0 if cost is None else params["cost"].total
-            cost = CARDS[name].get("cycle_cost")
-            params["cycle_cost"] = None if cost is None else Mana(cost)
-            params["cycle_verb"] = CARDS[name].get("cycle_verb", "discard")
-            params["enters_tapped"] = CARDS[name].get("enters_tapped")
-            params["name"] = name
-            params["show"] = rmchars(name, "-' ,.")
-            params["slug"] = rmchars(name, "',").lower().replace(" ", "_").replace("-", "_")
-            types = set(CARDS[name]["type"].split(","))
-            params["types"] = tuple(sorted(types))
-            cost = CARDS[name].get("sacrifice_cost")
-            params["sacrifice_cost"] = None if cost is None else Mana(cost)
-            taps_for = CARDS[name].get("taps_for")
-            if taps_for is None:
-                params["taps_for"] = None
-            else:
-                taps_for_set = {Mana(x) for x in taps_for.split(",")}
-                params["taps_for"] = tuple(sorted(taps_for_set))
-            values = [v for k, v in sorted(params.items())]
-            cls._instances[name] = CardBase.__new__(cls, *values)
-#            print("making a Card object for", name, params)
+            show = rmchars(name, "-' ,.")
+            slug = rmchars(name, "',").lower().replace(" ", "_").replace("-", "_")
+            cls._instances[name] = CardBase.__new__(cls, name, show, slug)
         return cls._instances[name]
 
     def __repr__(self):
@@ -215,20 +171,58 @@ class Card(CardBase):
         else:
             return other.name == self.name
 
-    def __ge__(self, other):
-        return self.name >= other.name
 
-    def __gt__(self, other):
-        return self.name > other.name
+    @property
+    def colors(self):
+        raw_colors = CARDS[self.name].get("color")
+        return raw_colors.split(",") if raw_colors else ()
 
-    def __lt__(self, other):
-        return self.name < other.name
+    @property
+    def types(self):
+        return CARDS[self.name]["type"].split(",")
 
-    def __le__(self, other):
-        return self.name <= other.name
+    @property
+    def cost(self):
+        cost = CARDS[self.name].get("cost")
+        return None if cost is None else Mana(cost)
 
-    def __ne__(self, other):
-        return self.name != other.name
+    @property
+    def cmc(self):
+        cost = CARDS[self.name].get("cost")
+        return 0 if cost is None else Mana(cost).total
+
+    @property
+    def types(self):
+        return CARDS[self.name]["type"].split(",")
+
+    @property
+    def cycle_cost(self):
+        cost = CARDS[self.name].get("cycle_cost")
+        return None if cost is None else Mana(cost)
+
+    @property
+    def cycle_verb(self):
+        return CARDS[self.name].get("cycle_verb", "discard")
+
+    @property
+    def enters_tapped(self):
+        return CARDS[self.name].get("enters_tapped")
+
+    @property
+    def sacrifice_cost(self):
+        cost = CARDS[self.name].get("sacrifice_cost")
+        return None if cost is None else Mana(cost)
+
+    @property
+    def taps_for(self):
+        taps_for = CARDS[self.name].get("taps_for")
+        if taps_for is None:
+            return None
+        else:
+            return {Mana(x) for x in taps_for.split(",")}
+
+
+
 
 
 def highlight(text, color=None):

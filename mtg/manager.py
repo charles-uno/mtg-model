@@ -4,7 +4,9 @@ import time
 from . import state, output
 
 
-def simulate(name, max_turns=4, debug=False):
+def simulate(name, max_turns=4):
+    print("starting a run on", name)
+
     # Keep track of the initial game state. If we fail to converge, this
     # is what we'll return so we know if we were on the play or draw.
     starttime = time.time()
@@ -25,13 +27,13 @@ def simulate(name, max_turns=4, debug=False):
     dt = time.time() - starttime
     if len(gs) != 1 or not gs.done:
         output.save(name, gs0.summary)
-        print(gs0.summary, gs0.performance)
+        print(name.ljust(12), gs0.summary, gs0.performance)
     else:
         output.save(name, gs.summary)
-        print(gs.summary, gs.performance)
+        print(name.ljust(12), gs.summary, gs.performance)
     # For debug runs, print and bail as soon as a trial works
-    if len(gs) == 1 and gs.turn and gs.uses(debug):
-        gs.report()
+    if len(gs) == 1 and gs.turn:
+#        gs.report()
         return True
 
 

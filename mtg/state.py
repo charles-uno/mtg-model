@@ -439,7 +439,7 @@ class GameState(GameStateBase):
 
     def scry(self, n):
         if n == 1:
-            return self.grab(None, mill=1) | self.clone(
+            return self.mill(1) | self.clone(
                 notes=self.notes + f", leave {self.top(1)}",
             )
         elif n == 2:
