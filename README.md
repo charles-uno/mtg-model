@@ -84,8 +84,6 @@ It's also appropriate for looking at goldfishing numbers for different builds of
 
 # Backlog
 
-Parallelism! Game states are immutable and they don't look at any shared variables. Could readily make use of multithreading or multiprocessing. This could significantly improve performance since the model is CPU-bound.
-
 Add verbose logging to keep track of the complete lines from many games. Would be good to have the ability to grep through them to see (for example) what the best turn one play tends to be.
 
 Add handling for Vesuva and Cavern of Souls. At the moment, they're just counted as colorless lands. Also Aether Hub and/or Gemstone Mine. At the moment, they just tap for whatever we want.
