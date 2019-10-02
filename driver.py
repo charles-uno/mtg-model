@@ -17,7 +17,7 @@ def main():
     trial = 0
     while True:
 
-        """
+            """
         if args.jobs > 1:
             batch_size = 4*args.jobs
             trial += batch_size
@@ -39,7 +39,7 @@ def main():
             if args.ntrials and trial >= args.ntrials:
                 break
         else:
-        """
+            """
 
             trial += 1
             name = random.choice(args.decks)
