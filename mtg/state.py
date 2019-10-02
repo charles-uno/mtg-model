@@ -24,7 +24,7 @@ from .card import Card, Cards
 
 # Most of the hands that don't converge at 2e5 states also don't
 # converge at 5e5 states. How much time do you want to burn trying?
-MAX_STATES = 5e5
+MAX_STATES = 1e5
 N_STATES = 0
 START_TIME = None
 
@@ -53,13 +53,13 @@ class GameStates(set):
 
     def report(self):
         if len(self) == 1:
-            [x.report() for x in self]
+            for state in self:
+                return state.report()
         # If we have a ton of states but did not converge, let's take a
         # look at the longest one I guess? The most actions to evaluate.
         else:
             longest_state = max((len(x.notes), x) for x in self)[-1]
-            longest_state.report()
-            print("Failed to converge after", N_STATES, "states")
+            return longest_state.report() + f"\nFailed to converge after {N_STATES} states"
 
     @property
     def performance(self):
@@ -425,7 +425,7 @@ class GameState(GameStateBase):
         return states.safe_getattr("play_" + card.slug)
 
     def report(self):
-        print(self.notes.lstrip(", \n"))
+        return self.notes.lstrip(", \n")
 
     def sacrifice(self, card):
         cost = card.sacrifice_cost

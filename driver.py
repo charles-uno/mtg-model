@@ -16,13 +16,11 @@ def main():
     # If given multiple names, choose randomly each time.
     trial = 0
     while True:
-
-            """
         if args.jobs > 1:
             batch_size = 4*args.jobs
             trial += batch_size
             print(trial)
-            pool = mp.Pool(args.jobs)
+            pool = mp.Pool(processes=args.jobs)
             jobs = []
             for _ in range(batch_size):
                 name = random.choice(args.decks)
@@ -30,25 +28,23 @@ def main():
                     pool.apply_async(mtg.simulate, (name,))
                 )
             results = [x.get() for x in jobs]
-            if args.debug:
-                for gs in results:
-                    if not gs:
+            if any(results) and args.debug:
+                for result in results:
+                    if not result:
                         continue
-                    gs.report()
-                    break
+                    print(result)
+                    return
             if args.ntrials and trial >= args.ntrials:
-                break
+                return
         else:
-            """
-
             trial += 1
             name = random.choice(args.decks)
             result = mtg.simulate(name)
             if result and args.debug:
-                result.report()
-                break
+                print(result)
+                return
             if args.ntrials and trial >= args.ntrials:
-                break
+                return
 
 
 def all_decks():

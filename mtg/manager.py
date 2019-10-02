@@ -5,8 +5,6 @@ from . import state, output
 
 
 def simulate(name, max_turns=4):
-    print("starting a run on", name)
-
     # Keep track of the initial game state. If we fail to converge, this
     # is what we'll return so we know if we were on the play or draw.
     starttime = time.time()
@@ -33,8 +31,7 @@ def simulate(name, max_turns=4):
         print(name.ljust(12), gs.summary, gs.performance)
     # For debug runs, print and bail as soon as a trial works
     if len(gs) == 1 and gs.turn:
-#        gs.report()
-        return True
+        return gs.report()
 
 
 def load_deck(deckname):

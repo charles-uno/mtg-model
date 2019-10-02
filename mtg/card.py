@@ -222,9 +222,6 @@ class Card(CardBase):
             return {Mana(x) for x in taps_for.split(",")}
 
 
-
-
-
 def highlight(text, color=None):
     if color == "green":
         return "\033[32m" + text + "\033[0m"
