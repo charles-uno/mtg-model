@@ -501,8 +501,7 @@ class GameState(GameStateBase):
         )
 
     def cast_ancient_stirrings(self):
-        cards = self.tron_choices(self.top(3).best.colorless)
-        return self.mill(5).grabs(cards)
+        return self.mill(5).grabs(self.top(5).best.colorless)
 
     def cast_arboreal_grazer(self):
         states = GameStates()
@@ -529,12 +528,10 @@ class GameState(GameStateBase):
         return states
 
     def cast_oath_of_nissa(self):
-        cards = self.tron_choices(self.top(3).best.creatures_lands)
-        return self.mill(3).grabs(cards)
+        return self.mill(3).grabs(self.top(3).best.creatures_lands)
 
     def cast_once_upon_a_time(self):
-        cards = self.tron_choices(self.top(5).best.creatures_lands)
-        return self.mill(5).grabs(cards)
+        return self.mill(5).grabs(self.top(5).best.creatures_lands)
 
     def cast_opt(self):
         states = GameStates()
