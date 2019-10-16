@@ -19,14 +19,13 @@ def main():
     while True:
         if args.jobs > 1:
             batch_size = 4*args.jobs
-            trial += batch_size
-            print(trial)
             pool = mp.Pool(processes=args.jobs)
             jobs = []
             for _ in range(batch_size):
+                trial += 1
                 name = random.choice(args.decks)
                 jobs.append(
-                    pool.apply_async(mtg.simulate, (name,))
+                    pool.apply_async(mtg.simulate, (name, trial))
                 )
             results = [x.get() for x in jobs]
             if any(results) and args.debug:
@@ -40,7 +39,7 @@ def main():
         else:
             trial += 1
             name = random.choice(args.decks)
-            result = mtg.simulate(name)
+            result = mtg.simulate(name, trial)
             if result and args.debug:
                 print(result)
                 return
