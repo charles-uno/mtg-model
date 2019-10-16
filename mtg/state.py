@@ -389,7 +389,10 @@ class GameState(GameStateBase):
             notes=self.notes + f"\nplay {card}",
             land_drops=self.land_drops - 1,
         )
-        if card.enters_tapped:
+        enters_tapped = card.enters_tapped
+        if enters_tapped == "check":
+            enters_tapped = getattr(self, "check_" + card.slug)()
+        if enters_tapped:
             return states.play_tapped(card, **kwargs)
         else:
             return states.play_untapped(card, **kwargs)
@@ -593,6 +596,9 @@ class GameState(GameStateBase):
     def cast_trinket_mage(self):
         return self.grabs(self.deck_list.trinkets())
 
+    def check_castle_garenbrig(self):
+        return not Card("Forest") in self.battlefield
+
     def cycle_once_upon_a_time(self):
         # Only allowed if this is the first spell we have cast all game.
         if self.spells_cast:
@@ -626,3 +632,6 @@ class GameState(GameStateBase):
 
     def play_zhalfirin_void(self):
         return self.scry(1)
+
+    def sacrifice_castle_garenbrig(self):
+        return self.add_mana("GGGGGG")

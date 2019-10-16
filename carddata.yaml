@@ -1,9 +1,3 @@
-"Allosaurus Rider":
-    cost: "5GG"
-    cycle_cost: "0"
-    cycle_verb: "cast (free)"
-    type: creature
-    color: green
 "Amulet of Vigor":
     display: Amulet
     cost: "1"
@@ -37,22 +31,12 @@ Blank:
     enters_tapped: true
     taps_for: "2"
     type: land
-"Chancellor of the Tangle":
-    type: creature
-    color: green
-    cost: "4GGG"
-"Chromatic Star":
-    type: artifact
-    cost: "1"
-    sacrifice_cost: "1"
-"Eldrich Evolution":
-    type: sorcery
-    color: green
-    cost: "1GG"
-"Expedition Map":
-    type: artifact
-    cost: "1"
-    sacrifice_cost: "2"
+"Castle Garenbrig":
+    display: Castle
+    enters_tapped: "check"
+    taps_for: "G"
+    sacrifice_cost: "3GG"
+    type: land
 Explore:
     cost: "1G"
     color: green
@@ -60,9 +44,11 @@ Explore:
 Forest:
     type: basic,land
     taps_for: G
+    enters_tapped: false
 "Gemstone Mine":
     type: land
     taps_for: U,G
+    enters_tapped: false
 "Growth Spiral":
     cost: "UG"
     color: green
@@ -70,6 +56,7 @@ Forest:
 Island:
     type: basic,land
     taps_for: U
+    enters_tapped: false
 "Khalni Garden":
     display: Garden
     type: land
