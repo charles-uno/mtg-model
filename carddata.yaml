@@ -29,13 +29,13 @@ Blank:
     color: red
 "Bojuka Bog":
     type: land
-    taps_for: "B"
+    taps_for: "1"
     enters_tapped: true
     display: Bog
 "Boros Garrison":
     display: Garrison
     enters_tapped: true
-    taps_for: "WR"
+    taps_for: "2"
     type: land
 "Chancellor of the Tangle":
     type: creature
@@ -61,7 +61,6 @@ Forest:
     type: basic,land
     taps_for: G
 "Gemstone Mine":
-    display: Mine
     type: land
     taps_for: U,G
 "Growth Spiral":
@@ -97,6 +96,7 @@ Neoform:
     color: green
     cost: G
 "Once Upon a Time":
+    display: OUAT
     type: instant
     color: green
     cost: "1G"
@@ -138,13 +138,8 @@ Neoform:
     color: green
 "Selesnya Sanctuary":
     type: land
-    display: GW
-    taps_for: "WG"
+    taps_for: "G1"
     enters_tapped: true
-"Serum Visions":
-    color: blue
-    type: sorcery
-    cost: "U"
 "Shefet Monitor":
     cycle_cost: "3G"
     type: creature
@@ -162,7 +157,6 @@ Neoform:
     cycle_cost: "0"
     cycle_verb: "exile"
 "Simic Growth Chamber":
-    display: GU
     type: land
     taps_for: "GU"
     enters_tapped: true

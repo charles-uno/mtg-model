@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import io
 import multiprocessing as mp
 import os
 import random
@@ -96,5 +97,21 @@ def parse_args():
     return parser.parse_args()
 
 
+class SilenceStderr(object):
+
+    def __enter__(self):
+        self.stderr = sys.stderr
+        sys.stderr = io.StringIO()
+
+    def __exit__(self, *args):
+        sys.stderr = self.stderr
+
+
 if __name__ == "__main__":
-    main()
+    # Suppress the multiprocess pool yelling about KeyboardInterrupt
+    with SilenceStderr():
+        try:
+            main()
+        except KeyboardInterrupt:
+            print("Killed")
+            sys.exit(1)
