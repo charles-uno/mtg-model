@@ -3,6 +3,7 @@ import sys
 import yaml
 
 from .mana import Mana
+from . import helpers
 
 
 with open("carddata.yaml") as handle:
@@ -142,8 +143,8 @@ class Card(CardBase):
         if isinstance(name, Card):
             return name
         if name not in cls._instances:
-            show = rmchars(name, "-' ,.")
-            slug = rmchars(name, "',").lower().replace(" ", "_").replace("-", "_")
+            show = helpers.rmchars(name, "-' ,.")
+            slug = helpers.rmchars(name, "',").lower().replace(" ", "_").replace("-", "_")
             cls._instances[name] = CardBase.__new__(cls, name, show, slug)
         return cls._instances[name]
 
@@ -231,10 +232,4 @@ def highlight(text, color=None):
         return "\033[33m" + text + "\033[0m"
     if color == "red":
         return "\033[31m" + text + "\033[0m"
-    return text
-
-
-def rmchars(text, chars):
-    for c in chars:
-        text = text.replace(c, "")
     return text

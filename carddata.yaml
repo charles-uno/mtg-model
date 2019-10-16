@@ -20,7 +20,7 @@
     color: green
 "Azusa, Lost but Seeking":
     display: Azusa
-    cost: 2G
+    cost: "2G"
     type: creature
     color: green
 Blank:
@@ -29,25 +29,18 @@ Blank:
     color: red
 "Bojuka Bog":
     type: land
-    taps_for: "1"
+    taps_for: "B"
     enters_tapped: true
     display: Bog
-"Bond of Flourishing":
-    type: sorcery
-    color: green
-    cost: "1G"
 "Boros Garrison":
     display: Garrison
     enters_tapped: true
-    taps_for: "2"
+    taps_for: "WR"
     type: land
 "Chancellor of the Tangle":
     type: creature
     color: green
     cost: "4GGG"
-"Charge Counter":
-    type: artifact
-    taps_for: "G,U"
 "Chromatic Star":
     type: artifact
     cost: "1"
@@ -56,16 +49,12 @@ Blank:
     type: sorcery
     color: green
     cost: "1GG"
-"Elvish Rejuvenator":
-    cost: "2G"
-    type: creature
-    color: green
 "Expedition Map":
     type: artifact
     cost: "1"
     sacrifice_cost: "2"
 Explore:
-    cost: 1G
+    cost: "1G"
     color: green
     type: sorcery
 Forest:
@@ -74,11 +63,7 @@ Forest:
 "Gemstone Mine":
     display: Mine
     type: land
-    taps_for: G,U
-"Autochthon Wurm":
-    type: creature
-    color: green
-    cost: "12GGG"
+    taps_for: U,G
 "Growth Spiral":
     cost: "UG"
     color: green
@@ -91,10 +76,6 @@ Island:
     type: land
     taps_for: G
     enters_tapped: true
-"Life Goes On":
-    type: instant
-    color: green
-    cost: "G"
 "Lotus Field":
     enters_tapped: true
     taps_for: GGG,UUU
@@ -105,7 +86,7 @@ Manamorphose:
     color: green
 Mountain:
     type: basic,land
-    taps_for: "1"
+    taps_for: "R"
 Neoform:
     type: sorcery
     cost: "UG"
@@ -133,7 +114,7 @@ Neoform:
 "Pyretic Ritual":
     type: instant
     color: red
-    cost: "2"
+    cost: "1R"
 "Radiant Fountain":
     display: Fountain
     type: land
@@ -158,7 +139,7 @@ Neoform:
 "Selesnya Sanctuary":
     type: land
     display: GW
-    taps_for: "1G"
+    taps_for: "WG"
     enters_tapped: true
 "Serum Visions":
     color: blue
@@ -174,10 +155,6 @@ Neoform:
     taps_for: G
     cycle_cost: "2"
     cycle_verb: "cycle"
-"Silhana Wayfinder":
-    type: creature
-    color: green
-    cost: "1G"
 "Simian Spirit Guide":
     type: creature
     display: SSG
@@ -224,10 +201,6 @@ Neoform:
     enters_tapped: true
     cycle_cost: 1UU
     cycle_verb: transmute
-"Tragic Lesson":
-    type: instant
-    cost: "2U"
-    color: blue
 "Tranquil Thicket":
     type: land
     taps_for: G
