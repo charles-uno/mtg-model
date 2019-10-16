@@ -42,55 +42,48 @@ class Cards(tuple):
         [new_seq.remove(Card(x)) for x in other]
         return Cards(sorted(new_seq))
 
-    def __contains__(self, card):
-        return tuple.__contains__(self, Card(card))
+    def __and__(self, other):
+        return Cards(set(self) & set(other))
 
     def count(self, card):
         return tuple.count(self, Card(card))
 
-    @property
-    def basic_lands(self):
-        return {x for x in self if "basic" in x.types and "land" in x.types}
+    def basic_lands(self, best=True):
+        cards = {x for x in self if "basic" in x.types and "land" in x.types}
+        return best_cards(cards) if best else Cards(cards)
 
-    @property
-    def colorless(self):
-        return {x for x in self if not x.colors}
+    def colorless(self, best=True):
+        cards = {x for x in self if not x.colors}
+        return best_cards(cards) if best else Cards(cards)
 
-    @property
-    def creatures(self):
-        return {x for x in self if "creature" in x.types}
+    def creatures(self, best=True):
+        cards = {x for x in self if "creature" in x.types}
+        return best_cards(cards) if best else Cards(cards)
 
-    @property
-    def creatures_lands(self):
-        return self.creatures | self.lands
+    def creatures_lands(self, best=True):
+        return self.creatures(best=best) + self.lands(best=best)
 
-    @property
-    def lands(self):
-        return {x for x in self if "land" in x.types}
+    def lands(self, best=True):
+        cards = {x for x in self if "land" in x.types}
+        return best_cards(cards) if best else Cards(cards)
 
-    @property
-    def greens(self):
-        return {x for x in self if "green" in x.colors}
+    def greens(self, best=True):
+        cards = {x for x in self if "green" in x.colors}
+        return best_cards(cards) if best else Cards(cards)
 
-    @property
-    def green_creatures(self):
-        return {x for x in self.creatures & self.greens}
+    def green_creatures(self, best=True):
+        return self.creatures(best=best) & self.greens(best=best)
 
-    @property
-    def permanents(self):
-        types = ("artifact", "creature", "enchantment", "land")
-        return {x for x in self if any(t in x.types for t in types)}
+    def trinkets(self, best=True):
+        cards = {x for x in self if "artifact" in x.types and x.cmc < 2}
+        return best_cards(cards) if best else Cards(cards)
 
-    @property
-    def trinkets(self):
-        return {x for x in self if "artifact" in x.types and x.cmc < 2}
+    def zeros(self, best=True):
+        cards = {x for x in self if x.cmc == 0}
+        return best_cards(cards) if best else Cards(cards)
 
-    @property
-    def zeros(self):
-        return {x for x in self if x.cmc == 0}
 
-    @property
-    def best(self):
+def best_cards(cards):
         """If Ancient Stirrings shows Gemstone Mine and Radiant
         Fountain, there's no reason for the model to ever take Radiant
         Fountain. This has a big impact on performance -- we're
@@ -98,33 +91,39 @@ class Cards(tuple):
         of multiple Amulets means we do sometimes prefer tapped lands
         over untapped.
         """
-        cards = set(self)
-        if "Gemstone Mine" in cards:
+        cards = set(cards)
+        if Card("Blank") in cards:
+            cards -= {Card("Blank")}
+        if Card("Gemstone Mine") in cards:
             cards -= {
-                "Forest",
-                "Island",
-                "Radiant Fountain",
+                Card("Forest"),
+                Card("Island"),
+                Card("Radiant Fountain"),
             }
-        if "Forest" in cards:
+        if Card("Forest") in cards:
             cards -= {
-                "Radiant Fountain",
+                Card("Radiant Fountain"),
             }
-        if "Island" in cards:
+        if Card("Island") in cards:
             cards -= {
-                "Radiant Fountain",
+                Card("Radiant Fountain"),
             }
-        if "Khalni Garden" in cards:
+        if Card("Khalni Garden") in cards:
             cards -= {
-                "Bojuka Bog",
+                Card("Bojuka Bog"),
             }
-        if "Simic Growth Chamber" in cards:
+        if Card("Tolaria West") in cards:
             cards -= {
-                "Selesnya Sanctuary",
-                "Boros Garrison",
+                Card("Bojuka Bog"),
             }
-        if "Selesnya Sanctuary" in cards:
+        if Card("Simic Growth Chamber") in cards:
             cards -= {
-                "Boros Garrison",
+                Card("Selesnya Sanctuary"),
+                Card("Boros Garrison"),
+            }
+        if Card("Selesnya Sanctuary") in cards:
+            cards -= {
+                Card("Boros Garrison"),
             }
         return Cards(cards)
 
@@ -143,7 +142,11 @@ class Card(CardBase):
         if isinstance(name, Card):
             return name
         if name not in cls._instances:
-            show = helpers.rmchars(name, "-' ,.")
+
+            show = CARDS[name].get("display")
+            if not show:
+                show = helpers.rmchars(name, "-' ,.")
+
             slug = helpers.rmchars(name, "',").lower().replace(" ", "_").replace("-", "_")
             cls._instances[name] = CardBase.__new__(cls, name, show, slug)
         return cls._instances[name]

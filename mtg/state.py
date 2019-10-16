@@ -188,7 +188,7 @@ class GameState(GameStateBase):
         if self.done:
             return GameStates([self])
         states = self.pass_turn()
-        for card in set(self.hand.lands):
+        for card in set(self.hand.lands()):
             states |= self.play(card)
         for card in set(self.hand):
             states |= self.cast(card)
@@ -252,7 +252,7 @@ class GameState(GameStateBase):
         states = GameStates()
         # For fetching and cantrips, some lands are better than others.
         # Choices for what to bounce are trickier.
-        for card in self.battlefield.lands:
+        for card in self.battlefield.lands():
             states |= self.clone(
                 notes=self.notes + f", bounce {card}",
                 battlefield=self.battlefield - card,
@@ -318,13 +318,18 @@ class GameState(GameStateBase):
     def grabs(self, cards):
         states = GameStates()
         for card in cards:
-            states |= self.grab(card)
+            states |= self.note(f", considering {cards}").grab(card)
         return states
 
     def mill(self, n):
         return self.clone(
             deck_index=self.deck_index + n,
             notes=self.notes + f", mill {self.top(n)}",
+        )
+
+    def note(self, note):
+        return self.clone(
+            notes=self.notes + note,
         )
 
     def pass_turn(self):
@@ -501,11 +506,11 @@ class GameState(GameStateBase):
         )
 
     def cast_ancient_stirrings(self):
-        return self.mill(5).grabs(self.top(5).best.colorless)
+        return self.mill(5).grabs(self.top(5).colorless())
 
     def cast_arboreal_grazer(self):
         states = GameStates()
-        for card in self.hand.lands:
+        for card in self.hand.lands():
             states |= self.play_tapped(card, note=f", play {card}")
         # If we have no lands in hand, there's no reason to cast Grazer.
         return states
@@ -528,10 +533,10 @@ class GameState(GameStateBase):
         return states
 
     def cast_oath_of_nissa(self):
-        return self.mill(3).grabs(self.top(3).best.creatures_lands)
+        return self.mill(3).grabs(self.top(3).creatures_lands())
 
     def cast_once_upon_a_time(self):
-        return self.mill(5).grabs(self.top(5).best.creatures_lands)
+        return self.mill(5).grabs(self.top(5).creatures_lands())
 
     def cast_opt(self):
         states = GameStates()
@@ -564,7 +569,7 @@ class GameState(GameStateBase):
 
     def cast_summoners_pact(self):
         states = GameStates()
-        for card in self.deck_list.green_creatures:
+        for card in self.deck_list.green_creatures():
             # You never need to Pact for a card that's in your hand.
             # Even if you need multiple Grazers, you can grab the second
             # after you play the first.
@@ -586,7 +591,7 @@ class GameState(GameStateBase):
         )
 
     def cast_trinket_mage(self):
-        return self.grabs(self.deck_list.trinkets)
+        return self.grabs(self.deck_list.trinkets())
 
     def cycle_once_upon_a_time(self):
         # Only allowed if this is the first spell we have cast all game.
@@ -601,7 +606,8 @@ class GameState(GameStateBase):
         return self.add_mana("R")
 
     def cycle_tolaria_west(self):
-        return self.grabs(self.deck_list.best.zeros)
+        # Never transmute Tolaria West for another copy of itself.
+        return self.grabs(self.deck_list.zeros() - "Tolaria West")
 
     def cycle_tranquil_thicket(self):
         return self.draw(1)
