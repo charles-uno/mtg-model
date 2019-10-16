@@ -114,7 +114,9 @@ class GameStates(set):
         for state in self:
             return state.summary
 
+
 # ======================================================================
+
 
 GAME_STATE_DEFAULTS = {
     # No need to distinguish tapped from untapped since we tap
@@ -135,9 +137,12 @@ GAME_STATE_DEFAULTS = {
     "turn": 0,
 }
 
+
 FIELDS = sorted(GAME_STATE_DEFAULTS.keys())
 
+
 GameStateBase = collections.namedtuple("GameStateBase", " ".join(FIELDS))
+
 
 class GameState(GameStateBase):
 
@@ -208,6 +213,18 @@ class GameState(GameStateBase):
         return self.clone(overflowed=1, done=1)
 
     @property
+    def performance(self):
+        dt = time.time() - START_TIME
+        return "%4.0fk states / %3.0f s = %4.0fk states/s" % (
+            N_STATES/1000,
+            dt,
+            N_STATES/1000/dt,
+        )
+
+    def report(self):
+        return self.notes.lstrip(", \n")
+
+    @property
     def summary(self):
         """Generate CSV output to show what turn we went off, whether we
         were on the play, and whether it's a "fast" win via Amulet or
@@ -221,16 +238,6 @@ class GameState(GameStateBase):
             str(fast),
             str(self.overflowed),
         ])
-
-    @property
-    def performance(self):
-        dt = time.time() - START_TIME
-        return "%4.0fk states / %3.0f s = %4.0fk states/s" % (
-            N_STATES/1000,
-            dt,
-            N_STATES/1000/dt,
-        )
-
     # ------------------------------------------------------------------
 
     def add_mana(self, m, note=""):
@@ -272,24 +279,6 @@ class GameState(GameStateBase):
             spells_cast=self.spells_cast + 1,
         )
         return getattr(states, "cast_" + card.slug)()
-
-    def check_tron(self):
-        tron = {
-            Card("Urza's Mine"),
-            Card("Urza's Power Plant"),
-            Card("Urza's Tower"),
-        }
-        tron_have = set(self.battlefield) & tron
-        tron_need = tron - tron_have
-        if len(tron_have) == 3:
-            return self.clone(done=True)
-        elif len(tron_have) == 2 and self.land_drops and tron_need <= set(self.hand):
-            return self.clone(
-                done=True,
-                battlefield=self.battlefield + "Amulet of Vigor",
-            ).play(tron_need.pop(), silent=True)
-        else:
-            return GameStates([self])
 
     def cycle(self, card):
         cost = card.cycle_cost
@@ -356,13 +345,6 @@ class GameState(GameStateBase):
             notes=self.notes + f"\n---- turn {self.turn+1}",
             turn=self.turn+1,
         ).tap_out()
-        # Chancellor of the Tangle
-        if self.turn == 0 and "Chancellor of the Tangle" in self.hand:
-            chancellors = [x for x in self.hand if x == "Chancellor of the Tangle"]
-            states = states.add_mana(
-                len(chancellors)*"G",
-                note=f", reveal {Cards(chancellors)}",
-            )
         # Handle suspended spells
         states = states.tick_down()
         if mana_debt:
@@ -370,7 +352,7 @@ class GameState(GameStateBase):
         if self.on_the_play and self.turn == 0:
             return states
         else:
-            return states.draw(1).check_tron()
+            return states.draw(1)
 
     def pay(self, cost, note=""):
         states = GameStates()
@@ -424,9 +406,6 @@ class GameState(GameStateBase):
         ).tap(card, **kwargs)
         return states.safe_getattr("play_" + card.slug)
 
-    def report(self):
-        return self.notes.lstrip(", \n")
-
     def sacrifice(self, card):
         cost = card.sacrifice_cost
         if card not in self.battlefield or cost is None or not self.mana_pool >= cost:
@@ -442,41 +421,8 @@ class GameState(GameStateBase):
             return self.mill(1) | self.clone(
                 notes=self.notes + f", leave {self.top(1)}",
             )
-        elif n == 2:
-            states = GameStates()
-            before = self.deck_list[:self.deck_index]
-            limbo = self.top(2)
-            after = self.deck_list[self.deck_index+2:]
-            # Top top
-            states |= self.clone(
-                notes=self.notes + f", leave {limbo}",
-            )
-            # Bottom top
-            states |= self.clone(
-                deck_index=self.deck_index+1,
-                notes=self.notes + f", mill {limbo[0]}, leave {limbo[1]}",
-            )
-            # Bottom bottom
-            states |= self.clone(
-                deck_index=self.deck_index+2,
-                notes=self.notes + f", mill {limbo}",
-            )
-            # Top top (flipped order)
-            flipped_deck = before + limbo[::-1] + after
-            states |= self.clone(
-                deck_list=Cards(flipped_deck, sort=False),
-                notes=self.notes + f", leave {limbo[::-1]}",
-            )
-            # Top bottom
-            flipped_deck = before + limbo[::-1] + after
-            states |= self.clone(
-                deck_index=self.deck_index+1,
-                deck_list=Cards(flipped_deck, sort=False),
-                notes=self.notes + f", mill {limbo[1]}, leave {limbo[0]}",
-            )
-            return states
         else:
-            raise ValueError("Scrying 3+ cards is not supported")
+            raise ValueError("Scrying 2+ cards is not supported")
 
     def safe_getattr(self, attr):
         try:
@@ -547,29 +493,7 @@ class GameState(GameStateBase):
     def top(self, n):
         return Cards(self.deck_list[self.deck_index:self.deck_index + n])
 
-    def tron_choices(self, cards):
-        # The computer has superhuman "instincts" about the order of the
-        # deck. Force it to choose arbitrarily.
-        tron = {
-            Card("Urza's Mine"),
-            Card("Urza's Power Plant"),
-            Card("Urza's Tower"),
-        }
-        tron_have = tron & set(self.battlefield + self.hand)
-        non_tron = cards - tron
-        tron_options = (set(cards) & tron) - tron_have
-        if tron_options:
-            return set([sorted(tron_options)[0]]) | non_tron
-        else:
-            return non_tron
-
     # ------------------------------------------------------------------
-
-    def cast_allosaurus_rider(self):
-        return self.clone(
-            spells_cast=self.spells_cast+1,
-            battlefield=self.battlefield + "Allosaurus Rider",
-        )
 
     def cast_amulet_of_vigor(self):
         return self.clone(
@@ -595,25 +519,6 @@ class GameState(GameStateBase):
             land_drops=self.land_drops + 2,
         )
 
-    def cast_bond_of_flourishing(self):
-        return self.grab_from_top(3, self.top(3).best.permanents)
-
-    def cast_chancellor_of_the_tangle(self):
-        return GameStates([self])
-
-    def cast_chromatic_star(self):
-        return self.clone(
-            battlefield=self.battlefield + "Chromatic Star",
-        )
-
-    def cast_eldrich_evolution(self):
-        return self.cast_neoform()
-
-    def cast_expedition_map(self):
-        return self.clone(
-            battlefield=self.battlefield + "Expedition Map",
-        )
-
     def cast_explore(self):
         return self.clone(land_drops=self.land_drops+1).draw(1)
 
@@ -622,11 +527,6 @@ class GameState(GameStateBase):
         for m in {"GG", "GU", "UU"}:
             states |= self.add_mana(m)
         return states
-
-    def cast_neoform(self):
-        if "Allosaurus Rider" not in self.battlefield:
-            return GameStates()
-        return self.clone(done=True)
 
     def cast_oath_of_nissa(self):
         cards = self.tron_choices(self.top(3).best.creatures_lands)
@@ -646,7 +546,7 @@ class GameState(GameStateBase):
         return self.clone(done=True)
 
     def cast_pyretic_ritual(self):
-        return self.add_mana("3")
+        return self.add_mana("RRR")
 
     def cast_sakura_tribe_elder(self):
         return self.fetch("Forest", tapped=True)
@@ -658,9 +558,6 @@ class GameState(GameStateBase):
 
     def cast_search_for_tomorrow(self):
         return self.fetch("Forest")
-
-    def cast_serum_visions(self):
-        return self.draw(1).scry(2)
 
     def cast_sleight_of_hand(self):
         return self.grab_from_top(2, None)
@@ -681,12 +578,6 @@ class GameState(GameStateBase):
             states |= self.grab(card)
         return states.clone(mana_debt=self.mana_debt + "2GG")
 
-    def cast_sylvan_scrying(self):
-        # The computer has superhuman "instincts" about the order of the
-        # deck. It knows what we're about to draw. Force it to make the
-        # choice arbitrarily.
-        return self.grabs(self.tron_choices(self.deck_list.best.lands))
-
     def cast_through_the_breach(self):
         if "Primeval Titan" not in self.hand:
             return GameStates()
@@ -697,20 +588,8 @@ class GameState(GameStateBase):
             battlefield=self.battlefield + "Amulet of Vigor",
         )
 
-    def cast_tragic_lesson(self):
-        return self.draw(2).pitch(1) | self.draw(2).bounce_land()
-
     def cast_trinket_mage(self):
         return self.grabs(self.deck_list.trinkets)
-
-    def cast_wild_cantor(self):
-        return self.clone(
-            battlefield=self.battlefield + "Wild Cantor",
-        )
-
-    def cycle_allosaurus_rider(self):
-        cards = [x for x in self.hand.greens]
-        return self.pitch(2, options=cards).cast_allosaurus_rider()
 
     def cycle_once_upon_a_time(self):
         # Only allowed if this is the first spell we have cast all game.
@@ -722,7 +601,7 @@ class GameState(GameStateBase):
         return self.suspend("Search for Tomorrow", 2)
 
     def cycle_simian_spirit_guide(self):
-        return self.add_mana("1")
+        return self.add_mana("R")
 
     def cycle_tolaria_west(self):
         return self.grabs(self.deck_list.best.zeros)
@@ -744,12 +623,3 @@ class GameState(GameStateBase):
 
     def play_zhalfirin_void(self):
         return self.scry(1)
-
-    def sacrifice_chromatic_star(self):
-        return self.add_mana("G").draw(1)
-
-    def sacrifice_expedition_map(self):
-        return self.cast_sylvan_scrying()
-
-    def sacrifice_wild_cantor(self):
-        return self.add_mana("G") | self.add_mana("U")
