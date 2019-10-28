@@ -44,7 +44,10 @@ def load_deck(deckname):
         for line in handle:
             if not line.strip() or line.startswith("#"):
                 continue
+            line = line.split("#")[0]
             n, cardname = line.rstrip().split(None, 1)
             cardnames += int(n) * [cardname]
+    if len(cardnames) != 60:
+        print("WARNING:", len(cardnames), "in", deckname)
     random.shuffle(cardnames)
     return cardnames

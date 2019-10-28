@@ -37,6 +37,10 @@ Blank:
     taps_for: "G"
     sacrifice_cost: "3GG"
     type: land
+"Dimir Aqueduct":
+    type: land
+    taps_for: "1U"
+    enters_tapped: true
 Explore:
     cost: "1G"
     color: green

@@ -621,6 +621,9 @@ class GameState(GameStateBase):
     def play_boros_garrison(self):
         return self.bounce_land()
 
+    def play_dimir_aqueduct(self):
+        return self.bounce_land()
+
     def play_selesnya_sanctuary(self):
         return self.bounce_land()
 
