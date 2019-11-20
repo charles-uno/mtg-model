@@ -61,6 +61,10 @@ Island:
     type: basic,land
     taps_for: U
     enters_tapped: false
+"Journey of Discovery":
+    type: sorcery
+    cost: "2G"
+    color: green
 "Khalni Garden":
     display: Garden
     type: land
