@@ -1,27 +1,3 @@
-<<<<<<< HEAD
-# mono green amulet -- tolaria is a one-of tutor target
-
-# field, vesuva, tolaria west
-3 Bojuka Bog
-# stronghold
-1 Radiant Fountain
-1 Boros Garrison
-1 Tolaria West
-4 Castle Garenbrig
-10 Forest
-10 Selesnya Sanctuary
-
-4 Amulet of Vigor
-4 Ancient Stirrings
-4 Arboreal Grazer
-4 Azusa, Lost but Seeking
-4 Once Upon a Time
-4 Primeval Titan
-4 Summoner's Pact
-
-# Pact of Negation, Engineered Explosives
-2 Blank
-=======
 # We'll always play at least one Tolaria West, but what if we look at it
 # as a tutor target and don't worry about it as a way to get Titan on
 # the table? For one thing, now we don't need to worry about blue mana.
@@ -37,11 +13,9 @@
 2 Blank
 
 # Gemstone Mine, etc
-8 Forest
-8 Selesnya Sanctuary
+10 Forest
+10 Selesnya Sanctuary
 # Vesuva, Bojuka Bog, Field of the Dead, Tolaria West
 4 Bojuka Bog
 # GQ, Fountain, Cavern...
 6 Radiant Fountain
-4 Zhalfirin Void
->>>>>>> f98f35d165d3bcbcbcb1694c4518841ed7f4592b

@@ -529,6 +529,9 @@ class GameState(GameStateBase):
     def cast_explore(self):
         return self.clone(land_drops=self.land_drops+1).draw(1)
 
+    def cast_journey_of_discovery(self):
+        return self.clone(land_drops=self.land_drops+2)
+
     def cast_manamorphose(self):
         states = GameStates()
         for m in {"GG", "GU", "UU"}:
