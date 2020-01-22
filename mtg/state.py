@@ -340,9 +340,12 @@ class GameState(GameStateBase):
         if self.turn < 2 and self.mana_debt:
             return GameStates()
         mana_debt = self.mana_debt
-        land_drops = 1 + self.battlefield.count("Sakura-Tribe Scout")
-        if "Azusa, Lost but Seeking" in self.battlefield:
-            land_drops += 2
+        land_drops = (
+            1 +
+            2*self.battlefield.count("Azusa, Lost but Seeking") +
+            self.battlefield.count("Dryad of the Ilysian Grove") +
+            self.battlefield.count("Sakura-Tribe Scout")
+        )
         states = self.clone(
             land_drops=land_drops,
             mana_debt=Mana(),
@@ -526,6 +529,18 @@ class GameState(GameStateBase):
             land_drops=self.land_drops + 2,
         )
 
+    def cast_dryad_of_the_ilysian_grove(self):
+        return self.clone(
+            battlefield=self.battlefield + "Dryad of the Ilysian Grove",
+            land_drops=self.land_drops + 1,
+        )
+
+    def cast_elvish_rejuvenator(self):
+        states = GameStates()
+        for land in self.top(5).lands():
+            states |= self.mill(5).grab(land).play_tapped(land)
+        return states
+
     def cast_explore(self):
         return self.clone(land_drops=self.land_drops+1).draw(1)
 
@@ -600,7 +615,7 @@ class GameState(GameStateBase):
         return self.grabs(self.deck_list.trinkets())
 
     def check_castle_garenbrig(self):
-        return not Card("Forest") in self.battlefield
+        return not Card("Forest") in self.battlefield and not Card("Dryad of the Ilysian Grove") in self.battlefield
 
     def cycle_once_upon_a_time(self):
         # Only allowed if this is the first spell we have cast all game.

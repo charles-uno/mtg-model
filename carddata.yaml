@@ -35,12 +35,20 @@ Blank:
     display: Castle
     enters_tapped: "check"
     taps_for: "G"
-    sacrifice_cost: "3GG"
+    sacrifice_cost: "2GGG"
     type: land
 "Dimir Aqueduct":
     type: land
     taps_for: "1U"
     enters_tapped: true
+"Dryad of the Ilysian Grove":
+    type: creature
+    cost: "2G"
+    color: green
+"Elvish Rejuvenator":
+    type: creature
+    cost: "2G"
+    color: green
 Explore:
     cost: "1G"
     color: green
