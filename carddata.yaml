@@ -59,6 +59,10 @@ Forest:
     type: basic,land
     taps_for: G
     enters_tapped: false
+"Gemstone Caverns":
+    type: land
+    taps_for: "1"
+    enters_tapped: false
 "Gemstone Mine":
     type: land
     taps_for: U,G

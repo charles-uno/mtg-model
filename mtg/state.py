@@ -353,6 +353,9 @@ class GameState(GameStateBase):
             notes=self.notes + f"\n---- turn {self.turn+1}",
             turn=self.turn+1,
         ).tap_out()
+        # Pre-game actions, like Gemstone Caverns or Chancellor.
+        if self.turn == 0:
+            states = states.pre_game_actions()
         # Handle suspended spells
         states = states.tick_down()
         if mana_debt:
@@ -416,6 +419,24 @@ class GameState(GameStateBase):
             battlefield=self.battlefield + card,
         ).tap(card, **kwargs)
         return states.safe_getattr("play_" + card.slug)
+
+    def pre_game_actions(self):
+        # Gemstone Caverns. Keep in mind that exiling nothing is allowed.
+        if Card("Gemstone Caverns") in self.hand and not self.on_the_play:
+            states = self.clone(
+                notes=self.notes + f", skip {Cards(['Gemstone Caverns'])}",
+            )
+            for card in self.hand - Cards(["Gemstone Caverns"]):
+                states |= self.clone(
+                    hand=self.hand - Cards(["Gemstone Caverns", card]),
+                    battlefield=self.battlefield + Cards(["Gemstone Mine"]),
+                    notes=self.notes + f", exile {Cards([card])} for {Cards(['Gemstone Caverns'])}",
+                ).tap_out()
+            return states
+        else:
+            return self.clone(
+                notes=self.notes + ", no pre-game actions",
+            )
 
     def sacrifice(self, card):
         cost = card.sacrifice_cost
