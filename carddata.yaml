@@ -45,10 +45,12 @@ Blank:
     type: creature
     cost: "2G"
     color: green
+    display: "Dryad"
 "Elvish Rejuvenator":
     type: creature
     cost: "2G"
     color: green
+    display: Rejuvenator
 Explore:
     cost: "1G"
     color: green
@@ -143,6 +145,7 @@ Neoform:
     type: land
     taps_for: "G1"
     enters_tapped: true
+    display: Bounce
 "Shefet Monitor":
     cycle_cost: "3G"
     type: creature
@@ -207,6 +210,11 @@ Neoform:
     cost: "2U"
     type: creature
     color: blue
+"Uro, Titan of Nature's Wrath":
+    cost: "1GU"
+    display: Uro
+    color: green,blue
+    type: creature
 "Urza's Mine":
     type: land
     taps_for: "1"
