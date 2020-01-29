@@ -26,6 +26,11 @@ Blank:
     taps_for: "1"
     enters_tapped: true
     display: Bog
+"Bond of Flourishing":
+    type: sorcery
+    color: green
+    cost: "1G"
+    display: "Bond"
 "Boros Garrison":
     display: Garrison
     enters_tapped: true

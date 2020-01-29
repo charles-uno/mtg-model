@@ -45,8 +45,15 @@ class Cards(tuple):
     def __and__(self, other):
         return Cards(set(self) & set(other))
 
+    def __or__(self, other):
+        return self + other
+
     def count(self, card):
         return tuple.count(self, Card(card))
+
+    def artifacts(self, best=True):
+        cards = {x for x in self if "artifact" in x.types}
+        return best_cards(cards) if best else Cards(cards)
 
     def basic_lands(self, best=True):
         cards = {x for x in self if "basic" in x.types and "land" in x.types}
@@ -63,6 +70,10 @@ class Cards(tuple):
     def creatures_lands(self, best=True):
         return self.creatures(best=best) + self.lands(best=best)
 
+    def enchantments(self, best=True):
+        cards = {x for x in self if "enchantment" in x.types}
+        return best_cards(cards) if best else Cards(cards)
+
     def lands(self, best=True):
         cards = {x for x in self if "land" in x.types}
         return best_cards(cards) if best else Cards(cards)
@@ -73,6 +84,9 @@ class Cards(tuple):
 
     def green_creatures(self, best=True):
         return self.creatures(best=best) & self.greens(best=best)
+
+    def permanents(self, **kwargs):
+        return self.creatures(**kwargs) + self.lands(**kwargs) + self.artifacts(**kwargs) + self.enchantments(**kwargs)
 
     def trinkets(self, best=True):
         cards = {x for x in self if "artifact" in x.types and x.cmc < 2}

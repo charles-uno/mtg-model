@@ -550,6 +550,9 @@ class GameState(GameStateBase):
             land_drops=self.land_drops + 2,
         )
 
+    def cast_bond_of_flourishing(self):
+        return self.mill(3).grabs(self.top(3).permanents())
+
     def cast_dryad_of_the_ilysian_grove(self):
         return self.clone(
             battlefield=self.battlefield + "Dryad of the Ilysian Grove",
