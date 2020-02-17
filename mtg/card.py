@@ -2,7 +2,7 @@ import collections
 import sys
 import yaml
 
-from .mana import Mana
+from .mana_simple import Mana
 from . import helpers
 
 

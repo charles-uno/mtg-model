@@ -17,7 +17,7 @@ import collections
 import itertools
 import time
 
-from .mana import Mana
+from .mana_simple import Mana
 from .card import Card, Cards
 
 # ======================================================================
