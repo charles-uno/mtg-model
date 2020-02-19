@@ -12,10 +12,8 @@ with open("carddata.yaml") as handle:
 
 class Cards(tuple):
 
-    def __new__(self, names, sort=True):
+    def __new__(self, names):
         cards = [Card(x) for x in names]
-        if sort:
-            cards = sorted(cards)
         return tuple.__new__(self, cards)
 
     def __str__(self):
@@ -33,14 +31,14 @@ class Cards(tuple):
             other = Card(other)
         if isinstance(other, Card):
             other = [other]
-        return Cards(sorted(list(self) + list(other)))
+        return Cards(list(self) + list(other))
 
     def __sub__(self, other):
         if isinstance(other, (str, Card)):
             other = (other,)
         new_seq = list(self)
         [new_seq.remove(Card(x)) for x in other]
-        return Cards(sorted(new_seq))
+        return Cards(new_seq)
 
     def __and__(self, other):
         return Cards(set(self) & set(other))
@@ -86,7 +84,7 @@ class Cards(tuple):
         return self.creatures(best=best) & self.greens(best=best)
 
     def permanents(self, **kwargs):
-        return self.creatures(**kwargs) + self.lands(**kwargs) + self.artifacts(**kwargs) + self.enchantments(**kwargs)
+        return self.creatures(**kwargs) | self.lands(**kwargs) | self.artifacts(**kwargs) | self.enchantments(**kwargs)
 
     def trinkets(self, best=True):
         cards = {x for x in self if "artifact" in x.types and x.cmc < 2}

@@ -1,18 +1,18 @@
-"Amulet of Vigor":
+Amulet of Vigor:
     display: Amulet
     cost: "1"
     type: artifact
-"Ancient Stirrings":
+Ancient Stirrings:
     type: sorcery
     color: green
     cost: G
     display: Stirrings
-"Arboreal Grazer":
+Arboreal Grazer:
     cost: G
     display: Sloth
     type: creature
     color: green
-"Azusa, Lost but Seeking":
+Azusa, Lost but Seeking:
     display: Azusa
     cost: "2G"
     type: creature
@@ -21,37 +21,33 @@ Blank:
     cost: null
     type: ""
     color: red
-"Bojuka Bog":
+Bojuka Bog:
     type: land
     taps_for: "1"
     enters_tapped: true
     display: Bog
-"Bond of Flourishing":
+Bond of Flourishing:
     type: sorcery
     color: green
     cost: "1G"
-    display: "Bond"
-"Boros Garrison":
+    display: Bond
+Boros Garrison:
     display: Garrison
     enters_tapped: true
     taps_for: "2"
     type: land
-"Castle Garenbrig":
+Castle Garenbrig:
     display: Castle
     enters_tapped: "check"
     taps_for: "G"
     sacrifice_cost: "2GGG"
     type: land
-"Dimir Aqueduct":
-    type: land
-    taps_for: "1U"
-    enters_tapped: true
-"Dryad of the Ilysian Grove":
+Dryad of the Ilysian Grove:
     type: creature
     cost: "2G"
     color: green
-    display: "Dryad"
-"Elvish Rejuvenator":
+    display: Dryad
+Elvish Rejuvenator:
     type: creature
     cost: "2G"
     color: green
@@ -64,15 +60,15 @@ Forest:
     type: basic,land
     taps_for: G
     enters_tapped: false
-"Gemstone Caverns":
+Gemstone Caverns:
     type: land
     taps_for: "1"
     enters_tapped: false
-"Gemstone Mine":
+Gemstone Mine:
     type: land
-    taps_for: U,G
+    taps_for: W,U,B,R,G
     enters_tapped: false
-"Growth Spiral":
+Growth Spiral:
     cost: "UG"
     color: green
     type: instant
@@ -80,171 +76,131 @@ Island:
     type: basic,land
     taps_for: U
     enters_tapped: false
-"Journey of Discovery":
-    type: sorcery
-    cost: "2G"
-    color: green
-"Khalni Garden":
+Khalni Garden:
     display: Garden
     type: land
     taps_for: G
     enters_tapped: true
-"Lotus Field":
+Lotus Field:
     enters_tapped: true
-    taps_for: GGG,UUU
+    taps_for: WWW,UUU,BBB,RRR,GGG
     type: land
-Manamorphose:
-    type: instant
-    cost: "1G"
-    color: green
 Mountain:
     type: basic,land
-    taps_for: "R"
-Neoform:
-    type: sorcery
-    cost: "UG"
-    color: blue,green
-"Oath of Nissa":
-    display: "Oath"
+    taps_for: R
+Oath of Nissa:
+    display: Oath
     type: enchantment
     color: green
     cost: G
-"Once Upon a Time":
+Once Upon a Time:
     display: OUAT
     type: instant
     color: green
-    cost: "1G"
+    cost: 1G
     cycle_cost: "0"
     cycle_verb: "cast (free)"
-"Opt":
+Opt:
     color: blue
     type: instant
     cost: U
-"Primeval Titan":
-    display: "Titan"
+Primeval Titan:
+    display: Titan
     cost: 4GG
     type: creature
     color: green
-"Pyretic Ritual":
+Pyretic Ritual:
     type: instant
     color: red
     cost: "1R"
-"Radiant Fountain":
+Radiant Fountain:
     display: Fountain
     type: land
     taps_for: "1"
-"Sakura-Tribe Elder":
+Sakura-Tribe Elder:
     display: Scout
     cost: "1G"
     type: creature
     color: green
-"Sakura-Tribe Scout":
+Sakura-Tribe Scout:
     display: Scout
     cost: G
     type: creature
     color: green
-"Search for Tomorrow":
+Search for Tomorrow:
     display: Search
     cost: "2G"
     type: sorcery
-    cycle_cost: "G"
-    cycle_verb: "suspend"
+    cycle_cost: G
+    cycle_verb: suspend
     color: green
-"Selesnya Sanctuary":
+Selesnya Sanctuary:
     type: land
     taps_for: "G1"
     enters_tapped: true
-    display: Bounce
-"Shefet Monitor":
-    cycle_cost: "3G"
-    type: creature
-    color: green
-"Sheltered Thicket":
+Sheltered Thicket:
     type: land
     enters_tapped: true
     taps_for: G
     cycle_cost: "2"
     cycle_verb: "cycle"
-"Simian Spirit Guide":
+Simian Spirit Guide:
     type: creature
     display: SSG
     color: red
     cycle_cost: "0"
-    cycle_verb: "exile"
-"Simic Growth Chamber":
+    cycle_verb: exile
+Simic Growth Chamber:
     type: land
-    taps_for: "GU"
+    taps_for: GU
     enters_tapped: true
-"Sleight of Hand":
-    type: sorcery
-    cost: "U"
-    color: blue
-"Stomping Ground":
+Stomping Ground:
     taps_for: G
     type: land
-"Summer Bloom":
+Summer Bloom:
     type: sorcery
     color: green
     cost: "1G"
-"Summoner's Pact":
+Summoner's Pact:
     type: instant
     color: green
     display: "Pact"
     cost: "0"
-"Sylvan Scrying":
+Sylvan Scrying:
     type: sorcery
     color: green
     cost: "1G"
-"Temple of Mystery":
+Temple of Mystery:
     type: land
     enters_tapped: true
     taps_for: G,U
-"Through the Breach":
+Through the Breach:
     type: instant
     cost: "5"
     color: red
-"Tolaria West":
-    display: TWest
+Tolaria West:
     type: land
     taps_for: U
     enters_tapped: true
     cycle_cost: 1UU
     cycle_verb: transmute
-"Tranquil Thicket":
-    type: land
-    taps_for: G
-    enters_tapped: true
-    cycle_cost: G
-"Trinket Mage":
+Trinket Mage:
     cost: "2U"
     type: creature
     color: blue
-"Uro, Titan of Nature's Wrath":
-    cost: "1GU"
-    display: Uro
-    color: green,blue
-    type: creature
-"Urza's Mine":
+Urza's Mine:
     type: land
     taps_for: "1"
-"Urza's Power Plant":
+Urza's Power Plant:
     type: land
     taps_for: "1"
-"Urza's Tower":
+Urza's Tower:
     type: land
     taps_for: "1"
-"Valakut, the Molten Pinnacle":
+Valakut, the Molten Pinnacle:
     type: land
-    taps_for: "1"
+    taps_for: "R"
     enters_tapped: true
-"Wild Cantor":
-    type: creature
-    cost: "1"
-    color: green,red
-    sacrifice_cost: "0"
-"Wooded Foothills":
-    type: land
-    taps_for: ""
-"Zhalfirin Void":
+Zhalfirin Void:
     type: land
     taps_for: "1"

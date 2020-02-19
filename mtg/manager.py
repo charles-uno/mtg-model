@@ -13,16 +13,14 @@ def simulate(name, trial=0, max_turns=4):
         on_the_play=random.randrange(2),
         reset_clock=True,
     ).draw(7)
-    # Draw opening hand and start turn 1.
-    gs = gs0.pass_turn()
+    # Keep track of the initial game state in case we hit an overflow
+    gs = gs0
     try:
-        for turn in range(max_turns):
+        for turn in range(max_turns+1):
             gs = gs.next_turn()
     except state.TooManyStates:
         gs = gs0.overflow()
-
     tally = str(trial).ljust(5)
-
     # If we found a solution or overflowed, we'll have just one state.
     # Multiple states means there's no solution.
     dt = time.time() - starttime

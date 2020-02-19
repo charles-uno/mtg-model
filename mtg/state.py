@@ -71,16 +71,6 @@ class GameStates(set):
         for state in self:
             return state.turn
 
-    def uses(self, card):
-        """Check if the solution we found uses the given card."""
-        if card is None:
-            return False
-        elif card == "":
-            return True
-        else:
-            for state in self:
-                return str(Card(card)) in state.notes
-
     @property
     def notes(self):
         for state in states:
@@ -157,7 +147,7 @@ class GameState(GameStateBase):
         new_kwargs.update(kwargs)
         for key in ("hand", "deck_list", "battlefield"):
             if not isinstance(new_kwargs[key], Cards):
-                new_kwargs[key] = Cards(new_kwargs[key], sort=False)
+                new_kwargs[key] = Cards(new_kwargs[key])
         values = [v for k, v in sorted(new_kwargs.items())]
         return GameStateBase.__new__(cls, *values)
 
@@ -165,7 +155,7 @@ class GameState(GameStateBase):
         """Ignore notes when collapsing duplicates."""
         fields = []
         for i, fieldname in enumerate(FIELDS):
-            if fieldname == "notes":
+            if fieldname in ("notes", "deck_list"):
                 continue
             fields.append(self[i])
         return tuple.__hash__(tuple(fields))
@@ -173,7 +163,7 @@ class GameState(GameStateBase):
     def __eq__(self, other):
         """Ignore notes when collapsing duplicates."""
         for i, fieldname in enumerate(FIELDS):
-            if fieldname == "notes":
+            if fieldname in ("notes", "deck_list"):
                 continue
             if self[i] != other[i]:
                 return False
@@ -232,12 +222,8 @@ class GameState(GameStateBase):
         it overflowed.
         """
         fast = 1 if "Amulet of Vigor" in self.battlefield else 0
-        return ",".join([
-            str(self.turn),
-            str(self.on_the_play),
-            str(fast),
-            str(self.overflowed),
-        ])
+        return f"{self.turn},{self.on_the_play},{fast},{self.overflowed}"
+
     # ------------------------------------------------------------------
 
     def add_mana(self, m, note=""):
@@ -339,6 +325,12 @@ class GameState(GameStateBase):
             return GameStates()
         if self.turn < 2 and self.mana_debt:
             return GameStates()
+        # Watch out for pre-game actions, like Gemstone Caverns and Chancellor
+        # of the Tangle
+#        if self.turn == 0:
+#            states = self.pre_game_actions()
+#        else:
+#            states = self
         mana_debt = self.mana_debt
         land_drops = (
             1 +
@@ -353,11 +345,13 @@ class GameState(GameStateBase):
             notes=self.notes + f"\n---- turn {self.turn+1}",
             turn=self.turn+1,
         ).tap_out()
-        # Pre-game actions, like Gemstone Caverns or Chancellor.
-        if self.turn == 0:
-            states = states.pre_game_actions()
         # Handle suspended spells
         states = states.tick_down()
+
+        if self.turn == 0:
+            states = states.pre_game_actions()
+
+
         if mana_debt:
             states = states.pay(mana_debt, note=f", pay {mana_debt} for pact")
         if self.on_the_play and self.turn == 0:
@@ -423,20 +417,20 @@ class GameState(GameStateBase):
     def pre_game_actions(self):
         # Gemstone Caverns. Keep in mind that exiling nothing is allowed.
         if Card("Gemstone Caverns") in self.hand and not self.on_the_play:
-            states = self.clone(
-                notes=self.notes + f", skip {Cards(['Gemstone Caverns'])}",
-            )
-            for card in self.hand - Cards(["Gemstone Caverns"]):
+
+            print("working on gemstone caverns")
+
+            states = self.note(f", ignore {Card('Gemstone Caverns')}")
+
+            for card in self.hand - "Gemstone Caverns":
                 states |= self.clone(
                     hand=self.hand - Cards(["Gemstone Caverns", card]),
-                    battlefield=self.battlefield + Cards(["Gemstone Mine"]),
-                    notes=self.notes + f", exile {Cards([card])} for {Cards(['Gemstone Caverns'])}",
-                ).tap_out()
+                    battlefield=self.battlefield + Card("Gemstone Mine"),
+                    notes=self.notes + f", cheat out {Card('Gemstone Caverns')} with {card}",
+                )
             return states
         else:
-            return self.clone(
-                notes=self.notes + ", no pre-game actions",
-            )
+            return self.note(", no pre-game actions")
 
     def sacrifice(self, card):
         cost = card.sacrifice_cost
@@ -568,15 +562,6 @@ class GameState(GameStateBase):
     def cast_explore(self):
         return self.clone(land_drops=self.land_drops+1).draw(1)
 
-    def cast_journey_of_discovery(self):
-        return self.clone(land_drops=self.land_drops+2)
-
-    def cast_manamorphose(self):
-        states = GameStates()
-        for m in {"GG", "GU", "UU"}:
-            states |= self.add_mana(m)
-        return states
-
     def cast_oath_of_nissa(self):
         return self.mill(3).grabs(self.top(3).creatures_lands())
 
@@ -584,10 +569,7 @@ class GameState(GameStateBase):
         return self.mill(5).grabs(self.top(5).creatures_lands())
 
     def cast_opt(self):
-        states = GameStates()
-        for i in range(2):
-            states |= self.mill(i).draw(1)
-        return states
+        return self.scry(1).draw(1)
 
     def cast_primeval_titan(self):
         return self.clone(done=True)
@@ -605,9 +587,6 @@ class GameState(GameStateBase):
 
     def cast_search_for_tomorrow(self):
         return self.fetch("Forest")
-
-    def cast_sleight_of_hand(self):
-        return self.grab_from_top(2, None)
 
     def cast_summer_bloom(self):
         return self.clone(land_drops=self.land_drops + 3)
@@ -661,9 +640,6 @@ class GameState(GameStateBase):
         return self.draw(1)
 
     def play_boros_garrison(self):
-        return self.bounce_land()
-
-    def play_dimir_aqueduct(self):
         return self.bounce_land()
 
     def play_selesnya_sanctuary(self):
