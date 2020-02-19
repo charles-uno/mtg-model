@@ -8,6 +8,10 @@ import itertools
 
 from . import helpers
 
+
+IGNORE_COLORS = ("W", "B", "R")
+
+
 ManaBase = collections.namedtuple("Mana", "wubrg total")
 
 class Mana(ManaBase):
@@ -15,14 +19,13 @@ class Mana(ManaBase):
     def __new__(cls, expr=""):
         if isinstance(expr, tuple):
             return ManaBase.__new__(cls, *expr)
+        # For colors we ignore, swap out that mana symbol for a "1"
+        for ic in IGNORE_COLORS:
+            expr = expr.replace(ic, "1")
         wubrg = tuple(expr.count(m) for m in "WUBRG")
-        # Accept C as a single colorless mana. Makes internal arithmetic
-        # more convenient.
-        total = sum(wubrg) + expr.count("C")
-        # Make sure we catch the numbers as well for generic costs.
-        num = helpers.rmchars(expr, "CWUBRG")
-        if num:
-            total += int(num)
+        # Total comes from colored mana as well as generic (or ignored). Sum
+        # each digit individually. Multi-digit numbers are not allowed.
+        total = sum(wubrg) + sum(int(c) for c in expr if c.isdigit())
         return ManaBase.__new__(cls, wubrg, total)
 
     @property
