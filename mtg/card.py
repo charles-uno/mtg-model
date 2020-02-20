@@ -72,6 +72,10 @@ class Cards(tuple):
         cards = {x for x in self if "enchantment" in x.types}
         return best_cards(cards) if best else Cards(cards)
 
+    def forests(self, best=True):
+        cards = {x for x in self if "forest" in x.types}
+        return best_cards(cards) if best else Cards(cards)
+
     def lands(self, best=True):
         cards = {x for x in self if "land" in x.types}
         return best_cards(cards) if best else Cards(cards)
@@ -106,9 +110,14 @@ def best_cards(cards):
         cards = set(cards)
         if Card("Blank") in cards:
             cards -= {Card("Blank")}
-        if Card("Gemstone Mine") in cards:
+        if Card("Breeding Pool") in cards:
             cards -= {
                 Card("Forest"),
+                Card("Island"),
+                Card("Radiant Fountain"),
+            }
+        if Card("Gemstone Mine") in cards:
+            cards -= {
                 Card("Island"),
                 Card("Radiant Fountain"),
             }
@@ -154,12 +163,11 @@ class Card(CardBase):
         if isinstance(name, Card):
             return name
         if name not in cls._instances:
-
-            show = CARDS[name].get("display")
-            if not show:
-                show = helpers.rmchars(name, "-' ,.")
-
-            slug = helpers.rmchars(name, "',").lower().replace(" ", "_").replace("-", "_")
+#            show = CARDS[name].get("display")
+#            if not show:
+#                show = helpers.rmchars(name, "-' ,.")
+            show = helpers.rmchars(name, "-' ,.")
+            slug = helpers.slug(name)
             cls._instances[name] = CardBase.__new__(cls, name, show, slug)
         return cls._instances[name]
 
@@ -186,7 +194,6 @@ class Card(CardBase):
             return other == self.name
         else:
             return other.name == self.name
-
 
     @property
     def colors(self):

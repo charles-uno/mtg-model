@@ -618,7 +618,10 @@ class GameState(GameStateBase):
         return self.grabs(self.deck_list.trinkets())
 
     def check_castle_garenbrig(self):
-        return not Card("Forest") in self.battlefield and not Card("Dryad of the Ilysian Grove") in self.battlefield
+        if self.battlefield.forests():
+            return False
+        else:
+            return Card("Dryad of the Ilysian Grove") not in self.battlefield
 
     def cycle_once_upon_a_time(self):
         # Only allowed if this is the first spell we have cast all game.

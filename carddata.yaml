@@ -34,8 +34,12 @@ Bond of Flourishing:
 Boros Garrison:
     display: Garrison
     enters_tapped: true
-    taps_for: "2"
+    taps_for: "WR"
     type: land
+Breeding Pool:
+    type: land,forest
+    taps_for: G,U
+    enters_tapped: false
 Castle Garenbrig:
     display: Castle
     enters_tapped: "check"
@@ -57,7 +61,7 @@ Explore:
     color: green
     type: sorcery
 Forest:
-    type: basic,land
+    type: basic,land,forest
     taps_for: G
     enters_tapped: false
 Gemstone Caverns:
