@@ -428,11 +428,7 @@ class GameState(GameStateBase):
     def pre_game_actions(self):
         # Gemstone Caverns. Keep in mind that exiling nothing is allowed.
         if Card("Gemstone Caverns") in self.hand and not self.on_the_play:
-
-            print("working on gemstone caverns")
-
             states = self.note(f", ignore {Card('Gemstone Caverns')}")
-
             for card in self.hand - "Gemstone Caverns":
                 states |= self.clone(
                     hand=self.hand - Cards(["Gemstone Caverns", card]),
