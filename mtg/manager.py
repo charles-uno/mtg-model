@@ -16,7 +16,7 @@ def simulate(name, trial=0, max_turns=4):
     # Keep track of the initial game state in case we hit an overflow
     gs = gs0
     try:
-        for turn in range(max_turns+1):
+        for turn in range(max_turns):
             gs = gs.next_turn()
     except state.TooManyStates:
         gs = gs0.overflow()
