@@ -58,7 +58,7 @@ class GameStates(set):
         # If we have a ton of states but did not converge, let's take a
         # look at the longest one I guess? The most actions to evaluate.
         else:
-            longest_state = max((len(x.notes), x) for x in self)[-1]
+            longest_state = max(self, key=len)
             return longest_state.report() + f"\nFailed to converge after {N_STATES} states"
 
     @property
@@ -82,20 +82,35 @@ class GameStates(set):
             return state.turn
 
     def next_turn(self):
-        """Short-circuit as soon as we find a line."""
-        new_states = GameStates()
+        next_states = GameStates()
+        done_states = GameStates()
         for state in self:
             for _state in state.next_turn():
-                if _state.done:
+                # If we find a line that gives us a hasty titan, short-circuit
+                # the rest.
+                if _state.fast and _state.done:
                     return GameStates([_state])
-                new_states.add(_state)
-                # In the event of an overflow, dump the longest state we
-                # have. That might give us a sense for the sorts of
-                # things that are problematic.
+                # If we find a line that gets there, but without haste, hold
+                # out for a better solution.
+                elif _state.done:
+                    done_states.add(state)
+                else:
+                    next_states.add(_state)
+                # In the event of an overflow, bail. If we've got a solution,
+                # report it. Otherwise, dump the longest state we have. That
+                # might give us a sense for what's problematic.
                 if N_STATES > MAX_STATES:
-                    max((len(x.notes), x) for x in new_states)[-1].report()
-                    raise TooManyStates
-        return new_states
+                    if done_states:
+                        return min(done_states, key=len)
+                    else:
+                        max(next_states, key=len).report()
+                        raise TooManyStates
+        # In the event of multiple matches, go for the one with the fewest
+        # steps -- avoid casting unnecessary Pacts, for example.
+        if done_states:
+            return min(done_states, key=len)
+        else:
+            return next_states
 
     @property
     def summary(self):
@@ -115,6 +130,7 @@ GAME_STATE_DEFAULTS = {
     "deck_list": (),
     "deck_index": 0,
     "done": False,
+    "fast": False,
     "hand": (),
     "mana_debt": Mana(),
     "mana_pool": Mana(),
@@ -169,6 +185,9 @@ class GameState(GameStateBase):
                 return False
         return True
 
+    def __len__(self):
+        return self.notes.count("\n")
+
     def clone(self, **kwargs):
         new_kwargs = self._asdict()
         new_kwargs.update(kwargs)
@@ -221,8 +240,7 @@ class GameState(GameStateBase):
         Breach. For hands that don't converge, also show whether or not
         it overflowed.
         """
-        fast = 1 if "Amulet of Vigor" in self.battlefield else 0
-        return f"{self.turn},{self.on_the_play},{fast},{self.overflowed}"
+        return f"{self.turn},{self.on_the_play},{int(self.fast)},{self.overflowed}"
 
     # ------------------------------------------------------------------
 
@@ -325,12 +343,6 @@ class GameState(GameStateBase):
             return GameStates()
         if self.turn < 2 and self.mana_debt:
             return GameStates()
-        # Watch out for pre-game actions, like Gemstone Caverns and Chancellor
-        # of the Tangle
-#        if self.turn == 0:
-#            states = self.pre_game_actions()
-#        else:
-#            states = self
         mana_debt = self.mana_debt
         land_drops = (
             1 +
@@ -345,13 +357,12 @@ class GameState(GameStateBase):
             notes=self.notes + f"\n---- turn {self.turn+1}",
             turn=self.turn+1,
         ).tap_out()
-        # Handle suspended spells
-        states = states.tick_down()
-
+        # Watch out for pre-game actions, like Gemstone Caverns and Chancellor
+        # of the Tangle
         if self.turn == 0:
             states = states.pre_game_actions()
-
-
+        # Handle suspended spells
+        states = states.tick_down()
         if mana_debt:
             states = states.pay(mana_debt, note=f", pay {mana_debt} for pact")
         if self.on_the_play and self.turn == 0:
@@ -524,6 +535,7 @@ class GameState(GameStateBase):
     def cast_amulet_of_vigor(self):
         return self.clone(
             battlefield=self.battlefield + "Amulet of Vigor",
+            fast=True,
         )
 
     def cast_ancient_stirrings(self):

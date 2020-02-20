@@ -14,7 +14,7 @@ def simulate(name, trial=0, max_turns=4):
         reset_clock=True,
     ).draw(7)
     # Keep track of the initial game state in case we hit an overflow
-    gs = gs0
+    gs = gs0.pass_turn()
     try:
         for turn in range(max_turns):
             gs = gs.next_turn()
@@ -28,6 +28,12 @@ def simulate(name, trial=0, max_turns=4):
         output.save(name, gs0.summary)
         print(tally, name.ljust(12), gs0.summary, gs0.performance)
     else:
+
+
+        if gs.turn == 2 and not gs.fast:
+            gs.report()
+
+
         output.save(name, gs.summary)
         print(tally, name.ljust(12), gs.summary, gs.performance)
     # For debug runs, print and bail as soon as a trial works
