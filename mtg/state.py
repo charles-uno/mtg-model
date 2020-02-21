@@ -69,12 +69,17 @@ class GameStates(set):
     @property
     def done(self):
         for state in self:
-            return state.turn
+            return state.done
 
     @property
     def notes(self):
         for state in states:
             return state.notes
+
+    @property
+    def overflowed(self):
+        for state in self:
+            return state.overflowed
 
     @property
     def turn(self):
@@ -135,8 +140,8 @@ GAME_STATE_DEFAULTS = {
     "mana_debt": Mana(),
     "mana_pool": Mana(),
     "notes": "",
-    "on_the_play": 0,
-    "overflowed": 0,
+    "on_the_play": False,
+    "overflowed": False,
     "land_drops": 0,
     "spells_cast": 0,
     "suspended": (),
@@ -219,7 +224,7 @@ class GameState(GameStateBase):
         return new_states
 
     def overflow(self):
-        return self.clone(overflowed=1, done=1)
+        return self.clone(overflowed=True, done=True)
 
     @property
     def performance(self):
@@ -240,7 +245,7 @@ class GameState(GameStateBase):
         Breach. For hands that don't converge, also show whether or not
         it overflowed.
         """
-        return f"{self.turn},{self.on_the_play},{int(self.fast)},{self.overflowed}"
+        return f"{self.turn},{int(self.on_the_play)},{int(self.fast)},{int(self.overflowed)}"
 
     # ------------------------------------------------------------------
 

@@ -24,18 +24,12 @@ def simulate(name, trial=0, max_turns=4):
     # If we found a solution or overflowed, we'll have just one state.
     # Multiple states means there's no solution.
     dt = time.time() - starttime
-    if len(gs) != 1 or not gs.done:
-        output.save(name, gs0.summary)
-        print(tally, name.ljust(12), gs0.summary, gs0.performance)
-    else:
-
-
-        if gs.turn == 2 and not gs.fast:
-            gs.report()
-
-
+    if len(gs) == 1 and gs.done:
         output.save(name, gs.summary)
         print(tally, name.ljust(12), gs.summary, gs.performance)
+    else:
+        output.save(name, gs0.summary)
+        print(tally, name.ljust(12), gs0.summary, gs0.performance)
     # For debug runs, print and bail as soon as a trial works
     if len(gs) == 1 and gs.turn:
         return gs.report()
