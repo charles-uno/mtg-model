@@ -1,31 +1,19 @@
-# For the purposes of goldfishing, we only care about whether a land
-# enters untapped and what it taps for -- the token from Khalni Garden
-# doesn't matter, for instance. So all untapped colorless lands are
-# called Radiant Fountain and all tapped colorless lands are called
-# Bojuka Bog ("colorless" in the sense that the only colors we care
-# about are blue and green). Vesuva is counted as a tapped colorless
-# land and Cavern of Souls as am untapped colorless land.
-
-2 Bojuka Bog
-1 Boros Garrison
-3 Forest
-4 Gemstone Mine
-1 Khalni Garden
-5 Radiant Fountain
-4 Selesnya Sanctuary
-4 Simic Growth Chamber
-4 Tolaria West
+# Grazer, Stirrings, Castle
 
 4 Amulet of Vigor
-4 Ancient Stirrings
 4 Arboreal Grazer
-4 Azusa, Lost but Seeking
+4 Ancient Stirrings
+4 Dryad of the Ilysian Grove
+4 Once Upon a Time
 4 Primeval Titan
 4 Summoner's Pact
+2 Blank
 
-# Anything that does not directly contribute to getting Primeval Titan
-# on the battlefield is blank, as far as the model is concerned. Walking
-# Ballista, Engineered Explosives, Pact of Negation, etc.
-4 Blank
-
-4 Oath of Nissa
+4 Castle Garenbrig
+3 Breeding Pool
+4 Forest
+3 Selesnya Sanctuary
+6 Bojuka Bog
+4 Radiant Fountain
+4 Simic Growth Chamber
+2 Tolaria West

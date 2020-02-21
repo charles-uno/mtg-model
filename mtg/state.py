@@ -24,7 +24,7 @@ from .card import Card, Cards
 
 # Most of the hands that don't converge at 2e5 states also don't
 # converge at 5e5 states. How much time do you want to burn trying?
-MAX_STATES = 1e5
+MAX_STATES = 2e5
 N_STATES = 0
 START_TIME = None
 
