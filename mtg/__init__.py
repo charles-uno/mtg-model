@@ -1,2 +1,2 @@
 from .manager import simulate
-from .output import print_stats
+from .output import print_results

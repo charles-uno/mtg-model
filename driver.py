@@ -14,6 +14,8 @@ def main():
     # If reporting results, do so.
     if args.results:
         return mtg.print_stats(args.decks, verbose=args.verbose)
+    elif args.results_new:
+        return mtg.print_results(args.decks)
     # If given multiple names, choose randomly each time.
     trial = 0
     while True:
@@ -82,8 +84,12 @@ def parse_args():
         help="Stop after this many trials (default: run until killed)",
     )
     parser.add_argument(
-        "-r",
         "--results",
+        action="store_true",
+        help="Instead of running simulations, print the results for the given decks",
+    )
+    parser.add_argument(
+        "--results-new",
         action="store_true",
         help="Instead of running simulations, print the results for the given decks",
     )

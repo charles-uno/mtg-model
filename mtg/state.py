@@ -28,6 +28,14 @@ MAX_STATES = 5e5
 N_STATES = 0
 START_TIME = None
 
+# We're able to distinguish between a "fast" titan (aka, one accompanied by
+# amulet) and a "slow" titan that doesn't get to attack until the next turn.
+# However, there's a significant computational cost to worrying about it.
+# Instead of short-circuiting as soon as we find any solution, we have to keep
+# chugging to see if we can find a fast one. Switch below determined whether or
+# not we bother with it.
+IGNORE_HASTE = False
+
 
 class TooManyStates(Exception):
     pass
@@ -91,6 +99,10 @@ class GameStates(set):
         done_states = GameStates()
         for state in self:
             for _state in state.next_turn(**kwargs):
+                # If we don't care about a hasty Titan (due to Amulet), bail as
+                # soon as we find any solution. This gives a performance boost.
+                if _state.done and IGNORE_HASTE:
+                    return GameStates([_state])
                 # If we find a line that gives us a hasty titan, short-circuit
                 # the rest.
                 if _state.fast and _state.done:
@@ -105,15 +117,10 @@ class GameStates(set):
                 # report it. Otherwise, dump the longest state we have. That
                 # might give us a sense for what's problematic.
                 if N_STATES > MAX_STATES:
-                    if done_states:
-                        return min(done_states, key=len)
-                    else:
-                        longest_state = max(next_states, key=len).overflow()
-
-                        print("### OVERFLOW ###")
-                        print(longest_state.report())
-
-                        raise TooManyStates
+                    longest_state = max(next_states, key=len).overflow()
+                    print("### OVERFLOW ###")
+                    print(longest_state.report())
+                    raise TooManyStates
         # In the event of multiple matches, go for the one with the fewest
         # steps -- avoid casting unnecessary Pacts, for example.
         if done_states:
@@ -224,12 +231,9 @@ class GameState(GameStateBase):
     def next_turn(self, final_turn=False):
         old_states, new_states = GameStates([self]), GameStates()
         while old_states:
-
             for state in old_states.pop().next_states():
-
-#                if final_turn and state.unsolvable_this_turn():
-#                    continue
-
+                if final_turn and state.unsolvable_this_turn():
+                    continue
                 # Hasty Titan is as good as it gets. If we find a line, we're
                 # done.
                 if state.done and state.fast:
@@ -256,6 +260,18 @@ class GameState(GameStateBase):
         ]
         if not any(self.have(x) for x in ways_to_get_titan):
             return True
+
+        # Without Amulet, there's no way to get multiple mana out of a single
+        # land drop. Also no way to Pact for extra mana, etc.
+        mana_ceiling = self.mana_pool.cmc + self.land_drops
+        if not self.have("Amulet of Vigor") and mana_ceiling < 6:
+
+            print("bailing: not enough lands to get to 6")
+
+
+
+
+
         return False
 
     def overflow(self):

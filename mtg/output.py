@@ -1,65 +1,39 @@
 import collections
+import json
 import math
 import os
 
 
 def save(name, summary):
-    os.makedirs(os.path.dirname(outfile(name)), exist_ok=True)
-    with open(outfile(name), "a") as handle:
-        handle.write(summary + "\n")
+    filename = f"output/{name}.json"
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    with open(filename, "a") as handle:
+        handle.write(json.dumps(summary) + "\n")
 
 
-def print_stats(names, verbose=False):
+def print_results(names):
+    # If no names are given, grab them all
     if not names:
         names = sorted(x.split(".")[0] for x in os.listdir("decks"))
     namewidth = max(len(x) for x in names) + 1
-    colwidth = 9
-    if verbose:
-        turns = [2, 2.5, 3, 3.5, 4, 4.5]
-    else:
-        turns = [2, 3, 4]
     header = "name".ljust(namewidth)
-    for t in turns:
-        header += "   " + f"turn {t}".rjust(colwidth)
-    header += "  |   overflow"
+    colwidth = 18
+    for tmo in range(4):
+        header += f"| turn {tmo+1} ".ljust(colwidth)
     print(header)
     for name in names:
-        lines = read(outfile(name))
-        total = max(len(lines), 1)
-        overflows = 0
-        tally = collections.defaultdict(int)
-        for line in lines:
-            if not line:
-                continue
-            tpfo = line.split(",")
-            turn = int(tpfo[0])
-            on_the_play = int(tpfo[1])
-            fast = int(tpfo[2])
-            overflow = int(tpfo[3])
-            if verbose and not fast:
-                turn += 0.5
-            tally[turn] += 1
-            if overflow:
-                overflows += 1
+        with open(f"output/{name}.json", "r") as handle:
+            docs = [json.loads(x) for x in handle]
         line = name.ljust(namewidth)
-        n = 0
-        for t in turns:
-            n += tally[t]
-            line += "   " + pcts(n, total, z=2)
-        line += "  |  " + pcts(overflows, total, z=2)
-        print(line)
-
-
-def outfile(name):
-    return "output/%s.csv" % name
-
-
-def read(path):
-    try:
-        with open(path, "r") as handle:
-            return [x.split("#")[0].rstrip() for x in handle]
-    except FileNotFoundError:
-        return []
+        total = len(docs)
+        # Turns index from 1. Index arrays buy TMO (turn minus one)
+        for tmo in range(4):
+            success = sum(1 for d in docs if d["turns"][tmo] is True)
+            overflow = sum(1 for d in docs if d["turns"][tmo] is None)
+            success_rate = pcts(success, total, z=2)
+            overflows = pct(overflow/total)
+            line += f"| {success_rate} ({overflows}) "
+        return print(line)
 
 
 def pcts(m, n, z=1):
