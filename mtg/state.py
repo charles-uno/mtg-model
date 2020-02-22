@@ -24,7 +24,7 @@ from .card import Card, Cards
 
 # Most of the hands that don't converge at 2e5 states also don't
 # converge at 5e5 states. How much time do you want to burn trying?
-MAX_STATES = 1e5
+MAX_STATES = 5e5
 N_STATES = 0
 START_TIME = None
 
@@ -227,11 +227,8 @@ class GameState(GameStateBase):
 
             for state in old_states.pop().next_states():
 
-                if final_turn and state.unsolvable_this_turn():
-                    continue
-
-                elif final_turn:
-                    state = state.note("\nstill solvable...").pop()
+#                if final_turn and state.unsolvable_this_turn():
+#                    continue
 
                 # Hasty Titan is as good as it gets. If we find a line, we're
                 # done.

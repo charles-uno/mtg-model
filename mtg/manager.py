@@ -4,7 +4,7 @@ import time
 from . import state, output
 
 
-def simulate(name, trial=0, max_turns=3):
+def simulate(name, trial=0, max_turns=4):
     # Keep track of the initial game state. If we fail to converge, this
     # is what we'll return so we know if we were on the play or draw.
     starttime = time.time()
