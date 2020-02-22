@@ -35,7 +35,7 @@ Boros Garrison:
     display: Garrison
     enters_tapped: true
     taps_for: "WR"
-    type: land
+    type: land,bounce
 Breeding Pool:
     type: land,forest
     taps_for: G,U
@@ -139,7 +139,7 @@ Search for Tomorrow:
     cycle_verb: suspend
     color: green
 Selesnya Sanctuary:
-    type: land
+    type: land,bounce
     taps_for: "G1"
     enters_tapped: true
 Sheltered Thicket:
@@ -155,7 +155,7 @@ Simian Spirit Guide:
     cycle_cost: "0"
     cycle_verb: exile
 Simic Growth Chamber:
-    type: land
+    type: land,bounce
     taps_for: GU
     enters_tapped: true
 Stomping Ground:
