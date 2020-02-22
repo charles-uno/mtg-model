@@ -142,12 +142,6 @@ Selesnya Sanctuary:
     type: land,bounce
     taps_for: "G1"
     enters_tapped: true
-Sheltered Thicket:
-    type: land
-    enters_tapped: true
-    taps_for: G
-    cycle_cost: "2"
-    cycle_verb: "cycle"
 Simian Spirit Guide:
     type: creature
     display: SSG
@@ -158,9 +152,6 @@ Simic Growth Chamber:
     type: land,bounce
     taps_for: GU
     enters_tapped: true
-Stomping Ground:
-    taps_for: G
-    type: land
 Summer Bloom:
     type: sorcery
     color: green
@@ -170,18 +161,6 @@ Summoner's Pact:
     color: green
     display: "Pact"
     cost: "0"
-Sylvan Scrying:
-    type: sorcery
-    color: green
-    cost: "1G"
-Temple of Mystery:
-    type: land
-    enters_tapped: true
-    taps_for: G,U
-Through the Breach:
-    type: instant
-    cost: "5"
-    color: red
 Tolaria West:
     type: land
     taps_for: U
@@ -192,19 +171,7 @@ Trinket Mage:
     cost: "2U"
     type: creature
     color: blue
-Urza's Mine:
-    type: land
-    taps_for: "1"
-Urza's Power Plant:
-    type: land
-    taps_for: "1"
-Urza's Tower:
-    type: land
-    taps_for: "1"
 Valakut, the Molten Pinnacle:
     type: land
     taps_for: "R"
     enters_tapped: true
-Zhalfirin Void:
-    type: land
-    taps_for: "1"

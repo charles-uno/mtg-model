@@ -4,7 +4,7 @@ import time
 from . import state, output
 
 
-def simulate(name, trial=0, max_turns=4):
+def simulate(name, trial=0, max_turns=3):
     # Keep track of the initial game state. If we fail to converge, this
     # is what we'll return so we know if we were on the play or draw.
     starttime = time.time()
@@ -16,8 +16,10 @@ def simulate(name, trial=0, max_turns=4):
     # Keep track of the initial game state in case we hit an overflow
     gs = gs0.pass_turn()
     try:
-        for turn in range(max_turns):
+        for turn in range(max_turns-1):
             gs = gs.next_turn()
+        # Optimization: On the final turn, nip failures in the bud
+        gs = gs.next_turn(final_turn=True)
     except state.TooManyStates:
         gs = gs0.overflow()
     tally = str(trial).ljust(5)
@@ -27,6 +29,11 @@ def simulate(name, trial=0, max_turns=4):
     if len(gs) == 1 and gs.done:
         output.save(name, gs.summary)
         print(tally, name.ljust(12), gs.summary, gs.performance)
+
+        if gs.turn == 2 and gs.done and not gs.fast:
+            print("### ???")
+            print(gs.report())
+
     else:
         output.save(name, gs0.summary)
         print(tally, name.ljust(12), gs0.summary, gs0.performance)

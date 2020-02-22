@@ -26,6 +26,8 @@ class Mana(ManaBase):
         # Total comes from colored mana as well as generic (or ignored). Sum
         # each digit individually. Multi-digit numbers are not allowed.
         total = sum(wubrg) + sum(int(c) for c in expr if c.isdigit())
+        # Optimization: do we really need to track more than 3 mana per color?
+#        wubrg = tuple(min(x, 3) for x in wubrg)
         return ManaBase.__new__(cls, wubrg, total)
 
     @property
@@ -40,6 +42,8 @@ class Mana(ManaBase):
         if isinstance(other, str):
             other = Mana(other)
         wubrg = tuple(s+o for s, o in zip(self.wubrg, other.wubrg))
+        # Optimization: do we really need to track more than 3 mana per color?
+#        wubrg = tuple(min(x, 3) for x in wubrg)
         total = self.total + other.total
         return Mana((wubrg, total))
 

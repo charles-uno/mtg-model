@@ -24,7 +24,7 @@ from .card import Card, Cards
 
 # Most of the hands that don't converge at 2e5 states also don't
 # converge at 5e5 states. How much time do you want to burn trying?
-MAX_STATES = 2e5
+MAX_STATES = 1e5
 N_STATES = 0
 START_TIME = None
 
@@ -86,11 +86,11 @@ class GameStates(set):
         for state in self:
             return state.turn
 
-    def next_turn(self):
+    def next_turn(self, **kwargs):
         next_states = GameStates()
         done_states = GameStates()
         for state in self:
-            for _state in state.next_turn():
+            for _state in state.next_turn(**kwargs):
                 # If we find a line that gives us a hasty titan, short-circuit
                 # the rest.
                 if _state.fast and _state.done:
@@ -98,7 +98,7 @@ class GameStates(set):
                 # If we find a line that gets there, but without haste, hold
                 # out for a better solution.
                 elif _state.done:
-                    done_states.add(state)
+                    done_states.add(_state)
                 else:
                     next_states.add(_state)
                 # In the event of an overflow, bail. If we've got a solution,
@@ -108,12 +108,17 @@ class GameStates(set):
                     if done_states:
                         return min(done_states, key=len)
                     else:
-                        max(next_states, key=len).report()
+                        longest_state = max(next_states, key=len).overflow()
+
+                        print("### OVERFLOW ###")
+                        print(longest_state.report())
+
                         raise TooManyStates
         # In the event of multiple matches, go for the one with the fewest
         # steps -- avoid casting unnecessary Pacts, for example.
         if done_states:
-            return min(done_states, key=len)
+            shortest_state = min(done_states, key=len)
+            return GameStates([shortest_state])
         else:
             return next_states
 
@@ -199,11 +204,16 @@ class GameState(GameStateBase):
         return GameStates([GameState(**new_kwargs)])
 
     def next_states(self):
-        if self.done:
+        if self.done and self.fast:
             return GameStates([self])
         states = self.pass_turn()
         for card in set(self.hand.lands()):
             states |= self.play(card)
+        # If OUAT is in our hand, make sure we cast it before casting anything
+        # else. Turns out this has a huge performance impact!
+        if self.spells_cast == 0 and "Once Upon a Time" in self.hand:
+            states |= self.cycle(Card("Once Upon a Time"))
+            return states
         for card in set(self.hand):
             states |= self.cast(card)
             states |= self.cycle(card)
@@ -211,17 +221,45 @@ class GameState(GameStateBase):
             states |= self.sacrifice(card)
         return states
 
-    def next_turn(self):
+    def next_turn(self, final_turn=False):
         old_states, new_states = GameStates([self]), GameStates()
         while old_states:
+
             for state in old_states.pop().next_states():
-                if state.done:
+
+                if final_turn and state.unsolvable_this_turn():
+                    continue
+
+                elif final_turn:
+                    state = state.note("\nstill solvable...").pop()
+
+                # Hasty Titan is as good as it gets. If we find a line, we're
+                # done.
+                if state.done and state.fast:
                     return GameStates([state])
+                # Stop iterating as soon as a line gets to Titan, but keep
+                # looking at other states in case we can find one with haste.
+                elif state.done:
+                    new_states.add(state)
                 elif state.turn > self.turn:
                     new_states.add(state)
                 else:
                     old_states.add(state)
         return new_states
+
+    def unsolvable_this_turn(self):
+        ways_to_get_titan = [
+            "Ancient Stirrings",
+            "Explore",
+            "Oath of Nissa",
+            "Once Upon a Time",
+            "Primeval Titan",
+            "Summoner's Pact",
+            "Tolaria West",
+        ]
+        if not any(self.have(x) for x in ways_to_get_titan):
+            return True
+        return False
 
     def overflow(self):
         return self.clone(overflowed=True, done=True)
@@ -327,7 +365,7 @@ class GameState(GameStateBase):
     def grabs(self, cards):
         states = GameStates()
         for card in cards:
-            states |= self.note(f", considering {cards}").grab(card)
+            states |= self.grab(card)
         return states
 
     def mill(self, n):
@@ -536,7 +574,6 @@ class GameState(GameStateBase):
     def cast_amulet_of_vigor(self):
         return self.clone(
             battlefield=self.battlefield + "Amulet of Vigor",
-            fast=True,
         )
 
     def cast_ancient_stirrings(self):
@@ -578,6 +615,9 @@ class GameState(GameStateBase):
     def cast_oath_of_nissa(self):
         return self.mill(3).grabs(self.top(3).creatures_lands())
 
+    def have(self, card):
+        return card in self.hand or card in self.battlefield
+
     def cast_once_upon_a_time(self):
         return self.mill(5).grabs(self.top(5).creatures_lands())
 
@@ -585,7 +625,10 @@ class GameState(GameStateBase):
         return self.scry(1).draw(1)
 
     def cast_primeval_titan(self):
-        return self.clone(done=True)
+        return self.clone(
+            done=True,
+            fast=True if "Amulet of Vigor" in self.battlefield else False,
+        )
 
     def cast_pyretic_ritual(self):
         return self.add_mana("RRR")
@@ -617,19 +660,6 @@ class GameState(GameStateBase):
             states |= self.grab(card)
         return states.clone(mana_debt=self.mana_debt + "2GG")
 
-    def cast_through_the_breach(self):
-        if "Primeval Titan" not in self.hand:
-            return GameStates()
-        # Add a dummy Amulet of Vigor to the battlefield to indicate a
-        # "fast" win
-        return self.clone(
-            done=True,
-            battlefield=self.battlefield + "Amulet of Vigor",
-        )
-
-    def cast_trinket_mage(self):
-        return self.grabs(self.deck_list.trinkets())
-
     def check_castle_garenbrig(self):
         if self.battlefield.forests():
             return False
@@ -649,8 +679,10 @@ class GameState(GameStateBase):
         return self.add_mana("R")
 
     def cycle_tolaria_west(self):
-        # Never transmute Tolaria West for another copy of itself.
-        return self.grabs(self.deck_list.zeros() - "Tolaria West")
+        # Never transmute Tolaria West for another copy of itself, or for a
+        # worse land.
+        options = Cards(["Summoner's Pact", "Simic Growth Chamber"])
+        return self.grabs(self.deck_list.zeros() & options)
 
     def cycle_tranquil_thicket(self):
         return self.draw(1)

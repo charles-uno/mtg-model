@@ -46,8 +46,15 @@ class Cards(tuple):
     def __or__(self, other):
         return self + other
 
+    def __contains__(self, card):
+        return tuple.__contains__(self, Card(card))
+
     def count(self, card):
         return tuple.count(self, Card(card))
+
+    def bounces(self, best=True):
+        cards = {x for x in self if "bounce" in x.types}
+        return best_cards(cards) if best else Cards(cards)
 
     def artifacts(self, best=True):
         cards = {x for x in self if "artifact" in x.types}
@@ -163,10 +170,7 @@ class Card(CardBase):
         if isinstance(name, Card):
             return name
         if name not in cls._instances:
-#            show = CARDS[name].get("display")
-#            if not show:
-#                show = helpers.rmchars(name, "-' ,.")
-            show = helpers.rmchars(name, "-' ,.")
+            show = helpers.rmchars(name.replace("'", "").title(), "- ,.")
             slug = helpers.slug(name)
             cls._instances[name] = CardBase.__new__(cls, name, show, slug)
         return cls._instances[name]
