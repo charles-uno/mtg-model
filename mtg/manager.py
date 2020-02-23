@@ -21,7 +21,7 @@ def simulate(name, trial=0, max_turns=4):
     gs = gs0.pass_turn()
     try:
         for turn in range(1, max_turns+1):
-            gs = gs.next_turn(final_turn=(turn == max_turns))
+            gs = gs.next_turn(max_turns=max_turns)
             # Internally, we keep track of whether or not this titan can have
             # haste. But if we want to store that data, we'll need to come back
             # and re-finagle the data structure.
@@ -40,22 +40,21 @@ def simulate(name, trial=0, max_turns=4):
     if len(gs) == 1 and gs.done:
         output.save(name, summary)
         print(tally, name.ljust(12), summarize(summary), gs.performance)
+        return gs.pop().report()
     else:
         output.save(name, summary)
         print(tally, name.ljust(12), summarize(summary), gs0.performance)
-    # For debug runs, print and bail as soon as a trial works
-    if len(gs) == 1 and gs.turn:
-        return gs.report()
+        return None
 
 
 def summarize(summary):
     play_draw = "on the play" if summary["on_the_play"] else "on the draw"
     for tmo, outcome in enumerate(summary["turns"]):
         if outcome is True:
-            return f"turn {tmo+1} success {play_draw}"
+            return f"turn {tmo+1} titan {play_draw}"
         elif outcome is None:
             return f"turn {tmo+1} overflow {play_draw}"
-    return f"turn {tmo+1} failure {play_draw}"
+    return f"turn {tmo+1} whiff {play_draw}"
 
 
 def load_deck(deckname):

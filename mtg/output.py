@@ -14,7 +14,7 @@ def save(name, summary):
 def print_results(names):
     # If no names are given, grab them all
     if not names:
-        names = sorted(x.split(".")[0] for x in os.listdir("decks"))
+        names = sorted(x.split(".")[0] for x in os.listdir("output"))
     namewidth = max(len(x) for x in names) + 1
     header = "name".ljust(namewidth)
     colwidth = 18
@@ -22,10 +22,13 @@ def print_results(names):
         header += f"| turn {tmo+1} ".ljust(colwidth)
     print(header)
     for name in names:
-        with open(f"output/{name}.json", "r") as handle:
-            docs = [json.loads(x) for x in handle]
+        if os.path.exists(f"output/{name}.json"):
+            with open(f"output/{name}.json", "r") as handle:
+                docs = [json.loads(x) for x in handle]
+        else:
+            docs = []
         line = name.ljust(namewidth)
-        total = len(docs)
+        total = max(len(docs), 1)
         # Turns index from 1. Index arrays buy TMO (turn minus one)
         for tmo in range(4):
             success = sum(1 for d in docs if d["turns"][tmo] is True)
@@ -33,7 +36,8 @@ def print_results(names):
             success_rate = pcts(success, total, z=2)
             overflows = pct(overflow/total)
             line += f"| {success_rate} ({overflows}) "
-        return print(line)
+        print(line)
+    return
 
 
 def pcts(m, n, z=1):

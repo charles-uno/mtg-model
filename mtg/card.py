@@ -97,6 +97,9 @@ class Cards(tuple):
     def permanents(self, **kwargs):
         return self.creatures(**kwargs) | self.lands(**kwargs) | self.artifacts(**kwargs) | self.enchantments(**kwargs)
 
+    def potential_titans(self):
+        return {x for x in self if x.can_be_titan}
+
     def trinkets(self, best=True):
         cards = {x for x in self if "artifact" in x.types and x.cmc < 2}
         return best_cards(cards) if best else Cards(cards)
@@ -221,6 +224,10 @@ class Card(CardBase):
     @property
     def types(self):
         return CARDS[self.name]["type"].split(",")
+
+    @property
+    def can_be_titan(self):
+        return CARDS[self.name].get("can_be_titan")
 
     @property
     def cycle_cost(self):

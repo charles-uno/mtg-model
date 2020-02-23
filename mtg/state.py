@@ -13,6 +13,11 @@ also automatically collapses duplicate game states to cut down on wasted
 computation time.
 """
 
+# TODO: Summoner's Pact and OUAT are potential spots for a combinatorial
+# explosion that leads to an overflow. Lete's stick some optimization in there
+# to narrow things down. For example, if we cast OUAT without any non-bounce
+# lands in hand, that's what we want.
+
 import collections
 import itertools
 import time
@@ -24,17 +29,9 @@ from .card import Card, Cards
 
 # Most of the hands that don't converge at 2e5 states also don't
 # converge at 5e5 states. How much time do you want to burn trying?
-MAX_STATES = 5e5
+MAX_STATES = 9e5
 N_STATES = 0
 START_TIME = None
-
-# We're able to distinguish between a "fast" titan (aka, one accompanied by
-# amulet) and a "slow" titan that doesn't get to attack until the next turn.
-# However, there's a significant computational cost to worrying about it.
-# Instead of short-circuiting as soon as we find any solution, we have to keep
-# chugging to see if we can find a fast one. Switch below determined whether or
-# not we bother with it.
-IGNORE_HASTE = False
 
 
 class TooManyStates(Exception):
@@ -96,21 +93,13 @@ class GameStates(set):
 
     def next_turn(self, **kwargs):
         next_states = GameStates()
-        done_states = GameStates()
         for state in self:
             for _state in state.next_turn(**kwargs):
-                # If we don't care about a hasty Titan (due to Amulet), bail as
-                # soon as we find any solution. This gives a performance boost.
-                if _state.done and IGNORE_HASTE:
+                if _state.overflowed:
                     return GameStates([_state])
-                # If we find a line that gives us a hasty titan, short-circuit
-                # the rest.
-                if _state.fast and _state.done:
-                    return GameStates([_state])
-                # If we find a line that gets there, but without haste, hold
-                # out for a better solution.
+                # As soon as we find a solution, bail.
                 elif _state.done:
-                    done_states.add(_state)
+                    return GameStates([_state])
                 else:
                     next_states.add(_state)
                 # In the event of an overflow, bail. If we've got a solution,
@@ -121,13 +110,7 @@ class GameStates(set):
                     print("### OVERFLOW ###")
                     print(longest_state.report())
                     raise TooManyStates
-        # In the event of multiple matches, go for the one with the fewest
-        # steps -- avoid casting unnecessary Pacts, for example.
-        if done_states:
-            shortest_state = min(done_states, key=len)
-            return GameStates([shortest_state])
-        else:
-            return next_states
+        return next_states
 
     @property
     def summary(self):
@@ -147,7 +130,6 @@ GAME_STATE_DEFAULTS = {
     "deck_list": (),
     "deck_index": 0,
     "done": False,
-    "fast": False,
     "hand": (),
     "mana_debt": Mana(),
     "mana_pool": Mana(),
@@ -210,10 +192,13 @@ class GameState(GameStateBase):
         new_kwargs.update(kwargs)
         return GameStates([GameState(**new_kwargs)])
 
-    def next_states(self):
-        if self.done and self.fast:
+    def next_states(self, max_turns):
+        # If this goose is already cooked, don't iterate further
+        if self.overflowed or self.done:
             return GameStates([self])
-        states = self.pass_turn()
+        states = GameStates()
+        if self.turn != max_turns:
+            states |= self.pass_turn()
         for card in set(self.hand.lands()):
             states |= self.play(card)
         # If OUAT is in our hand, make sure we cast it before casting anything
@@ -228,54 +213,56 @@ class GameState(GameStateBase):
             states |= self.sacrifice(card)
         return states
 
-    def next_turn(self, final_turn=False):
+    def next_turn(self, max_turns):
+        # Optimization: flag situations from which we cannot get Titan on the
+        # table, and stop iterating on them.
+        if self.turn == max_turns and self.unsolvable_this_turn():
+            return GameStates()
+        if self.turn == max_turns-1 and self.unsolvable_next_turn():
+            return GameStates()
         old_states, new_states = GameStates([self]), GameStates()
         while old_states:
-            for state in old_states.pop().next_states():
-                if final_turn and state.unsolvable_this_turn():
-                    continue
-                # Hasty Titan is as good as it gets. If we find a line, we're
-                # done.
-                if state.done and state.fast:
+            for state in old_states.pop().next_states(max_turns=max_turns):
+                # If this one is done, stop iterating
+                if state.overflowed or state.done:
                     return GameStates([state])
-                # Stop iterating as soon as a line gets to Titan, but keep
-                # looking at other states in case we can find one with haste.
-                elif state.done:
-                    new_states.add(state)
-                elif state.turn > self.turn:
+                if state.turn > self.turn:
                     new_states.add(state)
                 else:
                     old_states.add(state)
         return new_states
 
-    def unsolvable_this_turn(self):
-        ways_to_get_titan = [
-            "Ancient Stirrings",
-            "Explore",
-            "Oath of Nissa",
-            "Once Upon a Time",
-            "Primeval Titan",
-            "Summoner's Pact",
-            "Tolaria West",
-        ]
-        if not any(self.have(x) for x in ways_to_get_titan):
+    def unsolvable_next_turn(self):
+        # Optimization: if we don't have a titan, or a way to get one, and the
+        # top card of the deck doesn't help, then we're not gonna get there.
+        # Might save a lot of time finagling with Azusa if we identify this
+        # right off the bat.
+        potential_titans = (self.deck_list).potential_titans()
+        if not (self.hand + self.battlefield + self.top(1)).potential_titans():
+
+            print("### unsolvable next turn ###")
+
+            print(self.report())
+            print("top card:", self.top(1))
+
+            raise RuntimeError
+
             return True
+        return False
 
-        # Without Amulet, there's no way to get multiple mana out of a single
-        # land drop. Also no way to Pact for extra mana, etc.
-        mana_ceiling = self.mana_pool.cmc + self.land_drops
+    def unsolvable_this_turn(self):
+        potential_titans = (self.deck_list).potential_titans()
+        if not (self.hand + self.battlefield).potential_titans():
+            return True
+        # Without Amulet, each land drop nets at most one mana (plus a bonus
+        # one from Castle). No way to get ahead via Pact, OUAT, etc.
+        mana_ceiling = self.mana_pool.total + self.land_drops + 1
         if not self.have("Amulet of Vigor") and mana_ceiling < 6:
-
-            print("bailing: not enough lands to get to 6")
-
-
-
-
-
+            return True
         return False
 
     def overflow(self):
-        return self.clone(overflowed=True, done=True)
+        return self.clone(overflowed=True)
 
     @property
     def performance(self):
@@ -288,15 +275,6 @@ class GameState(GameStateBase):
 
     def report(self):
         return self.notes.lstrip(", \n")
-
-    @property
-    def summary(self):
-        """Generate CSV output to show what turn we went off, whether we
-        were on the play, and whether it's a "fast" win via Amulet or
-        Breach. For hands that don't converge, also show whether or not
-        it overflowed.
-        """
-        return f"{self.turn},{int(self.on_the_play)},{int(self.fast)},{int(self.overflowed)}"
 
     # ------------------------------------------------------------------
 
@@ -544,7 +522,12 @@ class GameState(GameStateBase):
         for card in self.battlefield:
             if not card.taps_for:
                 continue
-            for m in card.taps_for:
+            # Optimization: the only card that cares about blue mana is Tolaria
+            # West, and we never care about colorless.
+            mana_options = card.taps_for
+            if len(mana_options) > 1 and not self.have("Tolaria West"):
+                mana_options.discard(Mana("U"))
+            for m in mana_options:
                 new_pools |= {pool+m for pool in pools}
             pools, new_pools = new_pools, set()
         states = GameStates()
@@ -590,7 +573,7 @@ class GameState(GameStateBase):
         )
 
     def cast_ancient_stirrings(self):
-        return self.mill(5).grabs(self.top(5).colorless())
+        return self.mill(5).grabs(self.top(5).colorless(best=True))
 
     def cast_arboreal_grazer(self):
         states = GameStates()
@@ -608,7 +591,7 @@ class GameState(GameStateBase):
         )
 
     def cast_bond_of_flourishing(self):
-        return self.mill(3).grabs(self.top(3).permanents())
+        return self.mill(3).grabs(self.top(3).permanents(best=True))
 
     def cast_dryad_of_the_ilysian_grove(self):
         return self.clone(
@@ -618,7 +601,7 @@ class GameState(GameStateBase):
 
     def cast_elvish_rejuvenator(self):
         states = GameStates()
-        for land in self.top(5).lands():
+        for land in self.top(5).lands(best=True):
             states |= self.mill(5).grab(land).play_tapped(land)
         return states
 
@@ -626,22 +609,23 @@ class GameState(GameStateBase):
         return self.clone(land_drops=self.land_drops+1).draw(1)
 
     def cast_oath_of_nissa(self):
-        return self.mill(3).grabs(self.top(3).creatures_lands())
+        return self.mill(3).grabs(self.top(3).creatures_lands(best=True))
 
     def have(self, card):
         return card in self.hand or card in self.battlefield
 
     def cast_once_upon_a_time(self):
-        return self.mill(5).grabs(self.top(5).creatures_lands())
+
+#        lands = [x for x in self.hand if "land" in x.types]
+#        lands += [x for x in self.battlefield if "land" in x.types]
+
+        return self.mill(5).grabs(self.top(5).creatures_lands(best=True))
 
     def cast_opt(self):
         return self.scry(1).draw(1)
 
     def cast_primeval_titan(self):
-        return self.clone(
-            done=True,
-            fast=True if "Amulet of Vigor" in self.battlefield else False,
-        )
+        return self.clone(done=True)
 
     def cast_pyretic_ritual(self):
         return self.add_mana("RRR")
@@ -669,6 +653,9 @@ class GameState(GameStateBase):
             if card in self.hand:
                 continue
             if card == "Azusa, Lost but Seeking" and "Azusa, Lost but Seeking" in self.battlefield:
+                continue
+            # Optimization:  If we don't have Amulet, only ever Pact for Titan.
+            if not self.have("Amulet of Vigor") and card != "Primeval Titan":
                 continue
             states |= self.grab(card)
         return states.clone(mana_debt=self.mana_debt + "2GG")
@@ -716,4 +703,6 @@ class GameState(GameStateBase):
         return self.scry(1)
 
     def sacrifice_castle_garenbrig(self):
+        if "Primeval Titan" not in self.hand:
+            return GameStates()
         return self.add_mana("GGGGGG")
