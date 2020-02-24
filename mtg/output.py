@@ -31,8 +31,9 @@ def print_results(names):
         total = max(len(docs), 1)
         # Turns index from 1. Index arrays buy TMO (turn minus one)
         for tmo in range(4):
-            success = sum(1 for d in docs if d["turns"][tmo] is True)
-            overflow = sum(1 for d in docs if d["turns"][tmo] is None)
+            turn = str(tmo+1)
+            success = sum(1 for d in docs if d["turns"].get(turn) is True)
+            overflow = sum(1 for d in docs if d["turns"].get(turn) is None)
             success_rate = pcts(success, total, z=2)
             overflows = pct(overflow/total)
             line += f"| {success_rate} ({overflows}) "

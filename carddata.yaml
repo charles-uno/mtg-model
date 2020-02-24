@@ -7,6 +7,7 @@ Ancient Stirrings:
     color: green
     cost: G
     display: Stirrings
+    can_be_titan: true
 Arboreal Grazer:
     cost: G
     display: Sloth
@@ -31,6 +32,7 @@ Bond of Flourishing:
     color: green
     cost: "1G"
     display: Bond
+    can_be_titan: true
 Boros Garrison:
     display: Garrison
     enters_tapped: true
@@ -56,10 +58,12 @@ Elvish Rejuvenator:
     cost: "2G"
     color: green
     display: Rejuvenator
+    can_be_titan: true
 Explore:
     cost: "1G"
     color: green
     type: sorcery
+    can_be_titan: true
 Forest:
     type: basic,land,forest
     taps_for: G
@@ -76,6 +80,7 @@ Growth Spiral:
     cost: "UG"
     color: green
     type: instant
+    can_be_titan: true
 Island:
     type: basic,land
     taps_for: U
@@ -89,14 +94,12 @@ Lotus Field:
     enters_tapped: true
     taps_for: WWW,UUU,BBB,RRR,GGG
     type: land
-Mountain:
-    type: basic,land
-    taps_for: R
 Oath of Nissa:
     display: Oath
     type: enchantment
     color: green
     cost: G
+    can_be_titan: true
 Once Upon a Time:
     display: OUAT
     type: instant
@@ -104,15 +107,18 @@ Once Upon a Time:
     cost: 1G
     cycle_cost: "0"
     cycle_verb: "cast (free)"
+    can_be_titan: true
 Opt:
     color: blue
     type: instant
     cost: U
+    can_be_titan: true
 Primeval Titan:
     display: Titan
     cost: 4GG
     type: creature
     color: green
+    can_be_titan: true
 Pyretic Ritual:
     type: instant
     color: red
@@ -161,12 +167,14 @@ Summoner's Pact:
     color: green
     display: "Pact"
     cost: "0"
+    can_be_titan: true
 Tolaria West:
     type: land
     taps_for: U
     enters_tapped: true
     cycle_cost: 1UU
     cycle_verb: transmute
+    can_be_titan: true
 Trinket Mage:
     cost: "2U"
     type: creature

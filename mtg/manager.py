@@ -1,7 +1,7 @@
 import random
 import time
 
-from . import state, output
+from . import state, output, helpers
 
 
 def simulate(name, trial=0, max_turns=4):
@@ -16,7 +16,7 @@ def simulate(name, trial=0, max_turns=4):
     ).draw(7)
     # Keep track of data turn-by-turn. If we hit an overflow while computing
     # turn 4, we at least know there are no solutions for turn 3.
-    summary = {"on_the_play": on_the_play, "turns": []}
+    summary = {"on_the_play": on_the_play, "turns": {}}
     # Keep track of the initial game state in case we hit an overflow
     gs = gs0.pass_turn()
     try:
@@ -26,12 +26,12 @@ def simulate(name, trial=0, max_turns=4):
             # haste. But if we want to store that data, we'll need to come back
             # and re-finagle the data structure.
             if gs.done:
-                summary["turns"].append(True)
+                summary["turns"][str(turn)] = True
             else:
-                summary["turns"].append(False)
+                summary["turns"][str(turn)] = False
     except state.TooManyStates:
         for t in range(turn, max_turns+1):
-            summary["turns"].append(None)
+            summary["turns"][str(turn)] = None
         gs = gs0.overflow()
     tally = str(trial).ljust(5)
     # If we found a solution or overflowed, we'll have just one state.
@@ -49,12 +49,12 @@ def simulate(name, trial=0, max_turns=4):
 
 def summarize(summary):
     play_draw = "on the play" if summary["on_the_play"] else "on the draw"
-    for tmo, outcome in enumerate(summary["turns"]):
+    for turn, outcome in summary["turns"].items():
         if outcome is True:
-            return f"turn {tmo+1} titan {play_draw}"
+            return f"turn {turn} " + helpers.highlight("titan", "green") + f" {play_draw}"
         elif outcome is None:
-            return f"turn {tmo+1} overflow {play_draw}"
-    return f"turn {tmo+1} whiff {play_draw}"
+            return f"turn {turn} " + helpers.highlight("OVERFLOW", "red") + f" {play_draw}"
+    return f"turn {turn} " + helpers.highlight("whiff", "brown") + f" {play_draw}"
 
 
 def load_deck(deckname):

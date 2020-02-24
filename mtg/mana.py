@@ -56,7 +56,7 @@ class Mana(ManaBase):
         return expr
 
     def __str__(self):
-        return "\033[0;35m" + self.name() + "\033[0m"
+        return helpers.highlight(self.name(), "magenta")
 
     def __repr__(self):
         return "Mana(" + repr(self.name()) + ")"

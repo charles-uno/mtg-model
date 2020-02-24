@@ -183,13 +183,13 @@ class Card(CardBase):
 
     def __str__(self):
         if "green" in self.colors:
-            return highlight(self.show, "green")
+            return helpers.highlight(self.show, "green")
         elif not self.colors:
-            return highlight(self.show, "brown")
+            return helpers.highlight(self.show, "brown")
         elif "blue" in self.colors:
-            return highlight(self.show, "blue")
+            return helpers.highlight(self.show, "blue")
         elif "red" in self.colors:
-            return highlight(self.show, "red")
+            return helpers.highlight(self.show, "red")
         else:
             return self.show
 
@@ -254,15 +254,3 @@ class Card(CardBase):
             return None
         else:
             return {Mana(x) for x in taps_for.split(",")}
-
-
-def highlight(text, color=None):
-    if color == "green":
-        return "\033[32m" + text + "\033[0m"
-    if color == "blue":
-        return "\033[36m" + text + "\033[0m"
-    if color == "brown":
-        return "\033[33m" + text + "\033[0m"
-    if color == "red":
-        return "\033[31m" + text + "\033[0m"
-    return text

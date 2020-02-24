@@ -13,8 +13,6 @@ def main():
     args = parse_args()
     # If reporting results, do so.
     if args.results:
-        return mtg.print_stats(args.decks, verbose=args.verbose)
-    elif args.results_new:
         return mtg.print_results(args.decks)
     # If given multiple names, choose randomly each time.
     trial = 0
@@ -27,7 +25,7 @@ def main():
                 trial += 1
                 name = random.choice(args.decks)
                 jobs.append(
-                    pool.apply_async(mtg.simulate, (name, trial))
+                    pool.apply_async(mtg.simulate, (name, trial, 3))
                 )
             results = [x.get() for x in jobs]
             if any(results) and args.debug:
@@ -41,7 +39,7 @@ def main():
         else:
             trial += 1
             name = random.choice(args.decks)
-            result = mtg.simulate(name, trial)
+            result = mtg.simulate(name, trial, 3)
             if result and args.debug:
                 print(result)
                 return
@@ -87,17 +85,6 @@ def parse_args():
         "--results",
         action="store_true",
         help="Instead of running simulations, print the results for the given decks",
-    )
-    parser.add_argument(
-        "--results-new",
-        action="store_true",
-        help="Instead of running simulations, print the results for the given decks",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Verbose output",
     )
     return parser.parse_args()
 

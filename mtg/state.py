@@ -218,8 +218,8 @@ class GameState(GameStateBase):
         # table, and stop iterating on them.
         if self.turn == max_turns and self.unsolvable_this_turn():
             return GameStates()
-        if self.turn == max_turns-1 and self.unsolvable_next_turn():
-            return GameStates()
+#        if self.turn == max_turns-1 and self.unsolvable_next_turn():
+#            return GameStates()
         old_states, new_states = GameStates([self]), GameStates()
         while old_states:
             for state in old_states.pop().next_states(max_turns=max_turns):
