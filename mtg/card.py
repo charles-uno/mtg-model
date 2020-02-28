@@ -110,59 +110,59 @@ class Cards(tuple):
 
 
 def best_cards(cards):
-        """If Ancient Stirrings shows Gemstone Mine and Radiant
-        Fountain, there's no reason for the model to ever take Radiant
-        Fountain. This has a big impact on performance -- we're
-        kneecapping the exponential explosion. Notably, the possibility
-        of multiple Amulets means we do sometimes prefer tapped lands
-        over untapped.
-        """
-        cards = set(cards)
-        if Card("Blank") in cards:
-            cards -= {Card("Blank")}
-        if Card("Breeding Pool") in cards:
-            cards -= {
-                Card("Forest"),
-                Card("Island"),
-                Card("Radiant Fountain"),
-            }
-        if Card("Gemstone Mine") in cards:
-            cards -= {
-                Card("Island"),
-                Card("Radiant Fountain"),
-            }
-        if Card("Forest") in cards:
-            cards -= {
-                Card("Radiant Fountain"),
-            }
-        if Card("Island") in cards:
-            cards -= {
-                Card("Radiant Fountain"),
-            }
-        if Card("Khalni Garden") in cards:
-            cards -= {
-                Card("Bojuka Bog"),
-            }
-        if Card("Tolaria West") in cards:
-            cards -= {
-                Card("Bojuka Bog"),
-            }
-        if Card("Simic Growth Chamber") in cards:
-            cards -= {
-                Card("Selesnya Sanctuary"),
-                Card("Boros Garrison"),
-            }
-        if Card("Selesnya Sanctuary") in cards:
-            cards -= {
-                Card("Boros Garrison"),
-            }
-        return Cards(cards)
+    """If Ancient Stirrings shows Gemstone Mine and Radiant
+    Fountain, there's no reason for the model to ever take Radiant
+    Fountain. This has a big impact on performance -- we're
+    kneecapping the exponential explosion. Notably, the possibility
+    of multiple Amulets means we do sometimes prefer tapped lands
+    over untapped.
+    """
+    cards = set(cards)
+    if Card("Blank") in cards:
+        cards -= {Card("Blank")}
+    if Card("Breeding Pool") in cards:
+        cards -= {
+            Card("Forest"),
+            Card("Island"),
+            Card("Radiant Fountain"),
+        }
+    if Card("Gemstone Mine") in cards:
+        cards -= {
+            Card("Island"),
+            Card("Radiant Fountain"),
+        }
+    if Card("Forest") in cards:
+        cards -= {
+            Card("Radiant Fountain"),
+        }
+    if Card("Island") in cards:
+        cards -= {
+            Card("Radiant Fountain"),
+        }
+    if Card("Khalni Garden") in cards:
+        cards -= {
+            Card("Bojuka Bog"),
+        }
+    if Card("Tolaria West") in cards:
+        cards -= {
+            Card("Bojuka Bog"),
+        }
+    if Card("Simic Growth Chamber") in cards:
+        cards -= {
+            Card("Selesnya Sanctuary"),
+            Card("Boros Garrison"),
+        }
+    if Card("Selesnya Sanctuary") in cards:
+        cards -= {
+            Card("Boros Garrison"),
+        }
+    return Cards(cards)
 
 
 # ----------------------------------------------------------------------
 
 
-CardBase = collections.namedtuple("CardBase", "name show slug")
+CardBase = collections.namedtuple("CardBase", "name show slug dies")
 
 
 class Card(CardBase):
@@ -173,9 +173,16 @@ class Card(CardBase):
         if isinstance(name, Card):
             return name
         if name not in cls._instances:
+
+            if name.endswith("(dies)"):
+                name = name.split("(")[0].strip()
+                dies = True
+            else:
+                dies = False
+
             show = helpers.rmchars(name.replace("'", "").title(), "- ,.")
             slug = helpers.slug(name)
-            cls._instances[name] = CardBase.__new__(cls, name, show, slug)
+            cls._instances[name] = CardBase.__new__(cls, name, show, slug, dies)
         return cls._instances[name]
 
     def __repr__(self):

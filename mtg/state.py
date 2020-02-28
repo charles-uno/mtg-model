@@ -78,7 +78,7 @@ class GameStates(set):
 
     @property
     def notes(self):
-        for state in states:
+        for state in self:
             return state.notes
 
     @property
@@ -135,6 +135,7 @@ GAME_STATE_DEFAULTS = {
     "mana_pool": Mana(),
     "notes": "",
     "on_the_play": False,
+    "opponent": False,
     "overflowed": False,
     "land_drops": 0,
     "spells_cast": 0,
@@ -378,19 +379,31 @@ class GameState(GameStateBase):
         if self.turn < 2 and self.mana_debt:
             return GameStates()
         mana_debt = self.mana_debt
-        land_drops = (
-            1 +
-            2*self.battlefield.count("Azusa, Lost but Seeking") +
-            self.battlefield.count("Dryad of the Ilysian Grove") +
-            self.battlefield.count("Sakura-Tribe Scout")
-        )
-        states = self.clone(
+
+        # If we have an opponent, they get to kill everything
+        creatures = Cards([x for x in self.battlefield if "creature" in x.types])
+
+        if self.opponent and creatures:
+            states = self.clone(
+                notes=self.notes + f"\nopponent kills {creatures}",
+                battlefield=self.battlefield - creatures,
+            )
+            land_drops = 1
+        else:
+            states = self.clone()
+            land_drops = (
+                1 +
+                2*self.battlefield.count("Azusa, Lost but Seeking") +
+                self.battlefield.count("Dryad of the Ilysian Grove") +
+                self.battlefield.count("Sakura-Tribe Scout")
+            )
+
+        states = states.clone(
             land_drops=land_drops,
             mana_debt=Mana(),
             mana_pool=Mana(),
-            notes=self.notes + f"\n---- turn {self.turn+1}",
             turn=self.turn+1,
-        ).tap_out()
+        ).note(f"\n---- turn {self.turn+1}").tap_out()
         # Watch out for pre-game actions, like Gemstone Caverns and Chancellor
         # of the Tangle
         if self.turn == 0:
