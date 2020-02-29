@@ -174,8 +174,8 @@ class Card(CardBase):
             return name
         if name not in cls._instances:
 
-            if name.endswith("(dies)"):
-                name = name.split("(")[0].strip()
+            if name.endswith("*"):
+                name = name.strip("*")
                 dies = True
             else:
                 dies = False

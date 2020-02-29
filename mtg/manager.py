@@ -4,7 +4,7 @@ import time
 from . import state, output, helpers
 
 
-def simulate(name, trial=0, max_turns=4, opponent=False):
+def simulate(name, trial=0, max_turns=4):
     # Keep track of the initial game state. If we fail to converge, this
     # is what we'll return so we know if we were on the play or draw.
     starttime = time.time()
@@ -13,11 +13,10 @@ def simulate(name, trial=0, max_turns=4, opponent=False):
         deck_list=load_deck(name),
         on_the_play=on_the_play,
         reset_clock=True,
-        opponent=opponent,
     ).draw(7)
     # Keep track of data turn-by-turn. If we hit an overflow while computing
     # turn 4, we at least know there are no solutions for turn 3.
-    summary = {"on_the_play": on_the_play, "turns": {}, "opponent": opponent}
+    summary = {"on_the_play": on_the_play, "turns": {}}
     # Keep track of the initial game state in case we hit an overflow
     gs = gs0.pass_turn()
     try:

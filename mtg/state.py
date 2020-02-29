@@ -135,7 +135,6 @@ GAME_STATE_DEFAULTS = {
     "mana_pool": Mana(),
     "notes": "",
     "on_the_play": False,
-    "opponent": False,
     "overflowed": False,
     "land_drops": 0,
     "spells_cast": 0,
@@ -379,26 +378,22 @@ class GameState(GameStateBase):
         if self.turn < 2 and self.mana_debt:
             return GameStates()
         mana_debt = self.mana_debt
-
-        # If we have an opponent, they get to kill everything
-        creatures = Cards([x for x in self.battlefield if "creature" in x.types])
-
-        if self.opponent and creatures:
-            states = self.clone(
-                notes=self.notes + f"\nopponent kills {creatures}",
-                battlefield=self.battlefield - creatures,
-            )
-            land_drops = 1
+        # If noted, assume that our opponent kills creatures before we untap.
+        creatures_killed = Cards([x for x in self.battlefield if x.dies])
+        if creatures_killed:
+            state = self.clone(
+                notes=self.notes + f"\nopponent kills {creatures_killed}",
+                battlefield=self.battlefield - creatures_killed,
+            ).pop()
         else:
-            states = self.clone()
-            land_drops = (
-                1 +
-                2*self.battlefield.count("Azusa, Lost but Seeking") +
-                self.battlefield.count("Dryad of the Ilysian Grove") +
-                self.battlefield.count("Sakura-Tribe Scout")
-            )
-
-        states = states.clone(
+            state = self
+        land_drops = (
+            1 +
+            2*state.battlefield.count("Azusa, Lost but Seeking") +
+            state.battlefield.count("Dryad of the Ilysian Grove") +
+            state.battlefield.count("Sakura-Tribe Scout")
+        )
+        states = state.clone(
             land_drops=land_drops,
             mana_debt=Mana(),
             mana_pool=Mana(),
