@@ -5,7 +5,7 @@ import os
 
 
 def save(name, summary):
-    filename = f"output/{name}.json"
+    filename = os.path.join("output", f"{name}.json")
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "a") as handle:
         handle.write(json.dumps(summary) + "\n")
@@ -22,8 +22,9 @@ def print_results(names):
         header += f"| turn {tmo+1} ".ljust(colwidth)
     print(header)
     for name in names:
-        if os.path.exists(f"output/{name}.json"):
-            with open(f"output/{name}.json", "r") as handle:
+        filename = os.path.join("output", f"{name}.json")
+        if os.path.exists(filename):
+            with open(filename, "r") as handle:
                 docs = [json.loads(x) for x in handle]
         else:
             docs = []

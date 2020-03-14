@@ -1,3 +1,4 @@
+import os
 import random
 import time
 
@@ -58,7 +59,7 @@ def summarize(summary):
 
 
 def load_deck(deckname):
-    path = f"decks/{deckname}.in"
+    path = os.path.join("decks", f"{deckname}.in")
     cardnames = []
     with open(path, "r") as handle:
         for line in handle:
