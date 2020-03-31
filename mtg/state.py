@@ -698,6 +698,9 @@ class GameState(GameStateBase):
     def play_boros_garrison(self):
         return self.bounce_land()
 
+    def play_crumbling_vestige(self):
+        return self.add_mana("G")
+
     def play_selesnya_sanctuary(self):
         return self.bounce_land()
 

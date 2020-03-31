@@ -48,6 +48,10 @@ Castle Garenbrig:
     taps_for: "G"
     sacrifice_cost: "2GGG"
     type: land
+Crumbling Vestige:
+    type: land
+    taps_for: "1"
+    enters_tapped: true
 Dryad of the Ilysian Grove:
     type: creature
     cost: "2G"
