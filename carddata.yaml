@@ -131,6 +131,10 @@ Radiant Fountain:
     display: Fountain
     type: land
     taps_for: "1"
+Relic of Progenitus:
+    cost: "1"
+    sacrifice_cost: "1"
+    type: artifact
 Sakura-Tribe Elder:
     display: Scout
     cost: "1G"

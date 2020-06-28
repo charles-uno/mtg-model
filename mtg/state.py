@@ -638,6 +638,11 @@ class GameState(GameStateBase):
     def cast_pyretic_ritual(self):
         return self.add_mana("RRR")
 
+    def cast_relic_of_progenitus(self):
+        return self.clone(
+            battlefield=self.battlefield + "Relic of Progenitus",
+        )
+
     def cast_sakura_tribe_elder(self):
         return self.fetch("Forest", tapped=True)
 
@@ -717,3 +722,6 @@ class GameState(GameStateBase):
         if "Primeval Titan" not in self.hand:
             return GameStates()
         return self.add_mana("GGGGGG")
+
+    def sacrifice_relic_of_progenitus(self):
+        return self.draw(1)
