@@ -172,6 +172,8 @@ class Card(CardBase):
     def __new__(cls, name):
         if isinstance(name, Card):
             return name
+        elif not isinstance(name, str):
+            raise ValueError("need Card or str, not " + repr(name))
         if name not in cls._instances:
 
             if name.endswith("*"):

@@ -1,6 +1,7 @@
 import os
 import random
 import time
+import yaml
 
 from . import state, output, helpers
 
@@ -10,10 +11,12 @@ def simulate(name, trial=0, max_turns=4):
     # is what we'll return so we know if we were on the play or draw.
     starttime = time.time()
     on_the_play = bool(random.randrange(2))
+    deck_list, kwargs = load_deck(name)
     gs0 = state.GameState(
-        deck_list=load_deck(name),
+        deck_list=deck_list,
         on_the_play=on_the_play,
         reset_clock=True,
+        **kwargs,
     ).draw(7)
     # Keep track of data turn-by-turn. If we hit an overflow while computing
     # turn 4, we at least know there are no solutions for turn 3.
@@ -60,15 +63,20 @@ def summarize(summary):
 
 def load_deck(deckname):
     path = os.path.join("decks", f"{deckname}.in")
+    kwargs = {}
     cardnames = []
     with open(path, "r") as handle:
         for line in handle:
             if not line.strip() or line.startswith("#"):
                 continue
             line = line.split("#")[0]
+            if ": " in line:
+                key, val = line.split(": ")
+                kwargs[key] = val
+                continue
             n, cardname = line.rstrip().split(None, 1)
             cardnames += int(n) * [cardname]
     if len(cardnames) != 60:
         print("WARNING:", len(cardnames), "in", deckname)
     random.shuffle(cardnames)
-    return cardnames
+    return cardnames, kwargs

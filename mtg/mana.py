@@ -9,7 +9,17 @@ import itertools
 from . import helpers
 
 
-IGNORE_COLORS = ("W", "B", "R")
+IGNORE_COLORS = ()
+
+
+def set_colors(colors):
+    """By default, keep track of all colors. Optionally, a list can specify
+    that it only cares about a subset of colors. This improves computation time
+    significantly.
+    """
+    global IGNORE_COLORS
+    IGNORE_COLORS = {"W", "U", "B", "R", "G"} - set(str(colors).upper())
+    return
 
 
 ManaBase = collections.namedtuple("Mana", "wubrg total")

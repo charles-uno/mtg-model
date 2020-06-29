@@ -1,3 +1,8 @@
+Adventurous Impulse:
+    type: sorcery
+    color: green
+    cost: G
+    can_be_titan: true
 Amulet of Vigor:
     display: Amulet
     cost: "1"
@@ -52,6 +57,12 @@ Crumbling Vestige:
     type: land
     taps_for: "1"
     enters_tapped: true
+Devoted Druid:
+    type: creature
+    cost: "1G"
+    color: green
+    taps_for: G
+    sacrifice_cost: "0"
 Dryad of the Ilysian Grove:
     type: creature
     cost: "2G"
@@ -66,7 +77,7 @@ Elvish Rejuvenator:
 Explore:
     cost: "1G"
     color: green
-    type: sorcery
+    type: sorce
     can_be_titan: true
 Forest:
     type: basic,land,forest
@@ -154,8 +165,12 @@ Search for Tomorrow:
     color: green
 Selesnya Sanctuary:
     type: land,bounce
-    taps_for: "G1"
+    taps_for: "GW"
     enters_tapped: true
+Sheltered Thicket:
+    type: land,forest
+    enters_tapped: true
+    taps_for: R,G
 Simian Spirit Guide:
     type: creature
     display: SSG
@@ -176,6 +191,10 @@ Summoner's Pact:
     display: "Pact"
     cost: "0"
     can_be_titan: true
+Temple of Mystery:
+    type: land
+    enters_tapped: true
+    taps_for: G,U
 Tolaria West:
     type: land
     taps_for: U

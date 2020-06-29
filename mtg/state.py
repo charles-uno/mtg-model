@@ -22,7 +22,7 @@ import collections
 import itertools
 import time
 
-from .mana import Mana
+from .mana import Mana, set_colors
 from .card import Card, Cards
 
 # ======================================================================
@@ -156,6 +156,9 @@ class GameState(GameStateBase):
         if reset_clock:
             N_STATES = 0
             START_TIME = time.time()
+            colors = kwargs.pop("colors", "WUBRG")
+            set_colors(colors)
+            kwargs["notes"] = f"tracking colors: {colors}"
         else:
             N_STATES += 1
         new_kwargs = GAME_STATE_DEFAULTS.copy()
@@ -575,6 +578,9 @@ class GameState(GameStateBase):
 
     # ------------------------------------------------------------------
 
+    def cast_adventurous_impulse(self):
+        return self.cast_oath_of_nissa()
+
     def cast_amulet_of_vigor(self):
         return self.clone(
             battlefield=self.battlefield + "Amulet of Vigor",
@@ -623,10 +629,6 @@ class GameState(GameStateBase):
         return card in self.hand or card in self.battlefield
 
     def cast_once_upon_a_time(self):
-
-#        lands = [x for x in self.hand if "land" in x.types]
-#        lands += [x for x in self.battlefield if "land" in x.types]
-
         return self.mill(5).grabs(self.top(5).creatures_lands(best=True))
 
     def cast_opt(self):
@@ -706,6 +708,20 @@ class GameState(GameStateBase):
     def play_crumbling_vestige(self):
         return self.add_mana("G")
 
+    def play_lotus_field(self):
+        lands = [x for x in self.battlefield if "land" in x.types]
+        if len(lands) > 2:
+            to_sacrifice = itertools.combinations(lands, 2)
+        else:
+            to_sacrifice = [lands]
+        states = GameStates()
+        for ts in to_sacrifice:
+            states |= self.clone(
+                battlefield=self.battlefield - ts,
+                notes=self.notes + f", sacrifice {Cards(ts)}"
+            )
+        return states
+
     def play_selesnya_sanctuary(self):
         return self.bounce_land()
 
@@ -722,6 +738,9 @@ class GameState(GameStateBase):
         if "Primeval Titan" not in self.hand:
             return GameStates()
         return self.add_mana("GGGGGG")
+
+    def sacrifice_devoted_druid(self):
+        return self.add("G")
 
     def sacrifice_relic_of_progenitus(self):
         return self.draw(1)
