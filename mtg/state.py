@@ -77,6 +77,11 @@ class GameStates(set):
             return state.done
 
     @property
+    def hand(self):
+        for state in self:
+            return state.hand
+
+    @property
     def notes(self):
         for state in self:
             return state.notes
@@ -533,11 +538,7 @@ class GameState(GameStateBase):
         for card in self.battlefield:
             if not card.taps_for:
                 continue
-            # Optimization: the only card that cares about blue mana is Tolaria
-            # West, and we never care about colorless.
             mana_options = card.taps_for
-            if len(mana_options) > 1 and not self.have("Tolaria West"):
-                mana_options.discard(Mana("U"))
             for m in mana_options:
                 new_pools |= {pool+m for pool in pools}
             pools, new_pools = new_pools, set()
@@ -604,6 +605,9 @@ class GameState(GameStateBase):
             land_drops=self.land_drops + 2,
         )
 
+    def cast_beneath_the_sands(self):
+        return self.cast_sakura_tribe_elder()
+
     def cast_bond_of_flourishing(self):
         return self.mill(3).grabs(self.top(3).permanents(best=True))
 
@@ -621,6 +625,9 @@ class GameState(GameStateBase):
 
     def cast_explore(self):
         return self.clone(land_drops=self.land_drops+1).draw(1)
+
+    def cast_growth_spiral(self):
+        return self.cast_explore()
 
     def cast_oath_of_nissa(self):
         return self.mill(3).grabs(self.top(3).creatures_lands(best=True))
@@ -675,11 +682,24 @@ class GameState(GameStateBase):
             states |= self.grab(card)
         return states.clone(mana_debt=self.mana_debt + "2GG")
 
+    def cast_uro_titan_of_natures_wrath(self):
+        state = self.draw(1)
+        states = GameStates()
+        for land in state.hand.lands(best=False):
+            states |= state.play(land)
+        return states
+
     def check_castle_garenbrig(self):
         if self.battlefield.forests():
             return False
         else:
             return Card("Dryad of the Ilysian Grove") not in self.battlefield
+
+    def cycle_beneath_the_sands(self):
+        return self.draw(1)
+
+    def cycle_ketria_triome(self):
+        return self.draw(1)
 
     def cycle_once_upon_a_time(self):
         # Only allowed if this is the first spell we have cast all game.

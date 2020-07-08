@@ -18,7 +18,7 @@ def main():
     trial = 0
     while True:
         if args.jobs > 1:
-            batch_size = 4*args.jobs
+            batch_size = 10*args.jobs
             pool = mp.Pool(processes=args.jobs)
             jobs = []
             for _ in range(batch_size):

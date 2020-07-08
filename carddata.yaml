@@ -23,6 +23,11 @@ Azusa, Lost but Seeking:
     cost: "2G"
     type: creature
     color: green
+Beneath the Sands:
+    type: sorcery
+    color: green
+    cost: "2G"
+    cycle_cost: "2"
 Blank:
     cost: null
     type: ""
@@ -77,7 +82,7 @@ Elvish Rejuvenator:
 Explore:
     cost: "1G"
     color: green
-    type: sorce
+    type: sorcery
     can_be_titan: true
 Forest:
     type: basic,land,forest
@@ -100,6 +105,11 @@ Island:
     type: basic,land
     taps_for: U
     enters_tapped: false
+Ketria Triome:
+    type: land,forest
+    enters_tapped: true
+    taps_for: R,G,U
+    cycle_cost: "3"
 Khalni Garden:
     display: Garden
     type: land
@@ -206,6 +216,10 @@ Trinket Mage:
     cost: "2U"
     type: creature
     color: blue
+Uro, Titan of Nature's Wrath:
+    type: creature
+    color: green,blue
+    cost: 1GU
 Valakut, the Molten Pinnacle:
     type: land
     taps_for: "R"
