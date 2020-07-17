@@ -29,7 +29,8 @@ from .card import Card, Cards
 
 # Most of the hands that don't converge at 2e5 states also don't
 # converge at 5e5 states. How much time do you want to burn trying?
-MAX_STATES = 9e5
+MAX_STATES = 2e5
+MAX_SECONDS = 60
 N_STATES = 0
 START_TIME = None
 
@@ -110,19 +111,20 @@ class GameStates(set):
                 # In the event of an overflow, bail. If we've got a solution,
                 # report it. Otherwise, dump the longest state we have. That
                 # might give us a sense for what's problematic.
-                if N_STATES > MAX_STATES:
+                dt = time.time() - START_TIME
+                if N_STATES > MAX_STATES or dt > MAX_SECONDS:
                     longest_state = max(next_states, key=len).overflow()
                     print("### OVERFLOW ###")
                     print(longest_state.report())
                     raise TooManyStates
         return next_states
 
-    @property
-    def summary(self):
-        if len(self) != 1:
-            raise TypeError("Can only summarize a single state, not %d" % len(self))
-        for state in self:
-            return state.summary
+#    @property
+#    def summary(self):
+#        if len(self) != 1:
+#            raise TypeError("Can only summarize a single state, not %d" % len(self))
+#        for state in self:
+#            return state.summary
 
 
 # ======================================================================
@@ -225,20 +227,20 @@ class GameState(GameStateBase):
         # Optimization: flag situations from which we cannot get Titan on the
         # table, and stop iterating on them.
         if self.turn == max_turns and self.unsolvable_this_turn():
-            return GameStates()
-#        if self.turn == max_turns-1 and self.unsolvable_next_turn():
-#            return GameStates()
-        old_states, new_states = GameStates([self]), GameStates()
+            old_states = GameStates()
+        else:
+            old_states = GameStates([self])
+        # For each state, look at all the possible next states. Keep iterating
+        # until each passes the turn.
         while old_states:
             for state in old_states.pop().next_states(max_turns=max_turns):
                 # If this one is done, stop iterating
                 if state.overflowed or state.done:
-                    return GameStates([state])
+                    yield state
                 if state.turn > self.turn:
-                    new_states.add(state)
+                    yield state
                 else:
                     old_states.add(state)
-        return new_states
 
     def unsolvable_next_turn(self):
         # Optimization: if we don't have a titan, or a way to get one, and the

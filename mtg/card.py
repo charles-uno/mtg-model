@@ -262,4 +262,8 @@ class Card(CardBase):
         if taps_for is None:
             return None
         else:
-            return {Mana(x) for x in taps_for.split(",")}
+            mana_options = {Mana(x) for x in taps_for.split(",")}
+            # If it taps for G or U, but we're ignoring U, U will get
+            # downgraded to 1. Don't even return that.
+            mana_options_pruned = mana_options - {Mana("1")}
+            return mana_options_pruned or mana_options
