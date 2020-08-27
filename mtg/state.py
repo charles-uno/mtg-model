@@ -13,11 +13,6 @@ also automatically collapses duplicate game states to cut down on wasted
 computation time.
 """
 
-# TODO: Summoner's Pact and OUAT are potential spots for a combinatorial
-# explosion that leads to an overflow. Lete's stick some optimization in there
-# to narrow things down. For example, if we cast OUAT without any non-bounce
-# lands in hand, that's what we want.
-
 import collections
 import itertools
 import time
@@ -119,13 +114,6 @@ class GameStates(set):
                     raise TooManyStates
         return next_states
 
-#    @property
-#    def summary(self):
-#        if len(self) != 1:
-#            raise TypeError("Can only summarize a single state, not %d" % len(self))
-#        for state in self:
-#            return state.summary
-
 
 # ======================================================================
 
@@ -224,9 +212,7 @@ class GameState(GameStateBase):
         return states
 
     def next_turn(self, max_turns):
-        # Optimization: flag situations from which we cannot get Titan on the
-        # table, and stop iterating on them.
-        if self.turn == max_turns and self.unsolvable_this_turn():
+        if self.turn == max_turns:
             old_states = GameStates()
         else:
             old_states = GameStates([self])
@@ -241,35 +227,6 @@ class GameState(GameStateBase):
                     yield state
                 else:
                     old_states.add(state)
-
-    def unsolvable_next_turn(self):
-        # Optimization: if we don't have a titan, or a way to get one, and the
-        # top card of the deck doesn't help, then we're not gonna get there.
-        # Might save a lot of time finagling with Azusa if we identify this
-        # right off the bat.
-        potential_titans = (self.deck_list).potential_titans()
-        if not (self.hand + self.battlefield + self.top(1)).potential_titans():
-
-            print("### unsolvable next turn ###")
-
-            print(self.report())
-            print("top card:", self.top(1))
-
-            raise RuntimeError
-
-            return True
-        return False
-
-    def unsolvable_this_turn(self):
-        potential_titans = (self.deck_list).potential_titans()
-        if not (self.hand + self.battlefield).potential_titans():
-            return True
-        # Without Amulet, each land drop nets at most one mana (plus a bonus
-        # one from Castle). No way to get ahead via Pact, OUAT, etc.
-        mana_ceiling = self.mana_pool.total + self.land_drops + 1
-        if not self.have("Amulet of Vigor") and mana_ceiling < 6:
-            return True
-        return False
 
     def overflow(self):
         return self.clone(overflowed=True)
@@ -560,7 +517,7 @@ class GameState(GameStateBase):
         to_cast = []
         tick_notes = Cards([])
         for card, n in self.suspended:
-            if n > 0:
+            if n > 1:
                 tick_notes += card
                 suspended.append((card, n-1))
             else:
@@ -613,6 +570,9 @@ class GameState(GameStateBase):
     def cast_bond_of_flourishing(self):
         return self.mill(3).grabs(self.top(3).permanents(best=True))
 
+    def cast_debug_titan(self):
+        return self.clone(done=True)
+
     def cast_dryad_of_the_ilysian_grove(self):
         return self.clone(
             battlefield=self.battlefield + "Dryad of the Ilysian Grove",
@@ -630,6 +590,11 @@ class GameState(GameStateBase):
 
     def cast_growth_spiral(self):
         return self.cast_explore()
+
+    def cast_llanowar_visionary(self):
+        return self.clone(
+            battlefield=self.battlefield + "Llanowar Visionary",
+        ).draw(1)
 
     def cast_oath_of_nissa(self):
         return self.mill(3).grabs(self.top(3).creatures_lands(best=True))
@@ -683,6 +648,12 @@ class GameState(GameStateBase):
                 continue
             states |= self.grab(card)
         return states.clone(mana_debt=self.mana_debt + "2GG")
+
+    def cast_through_the_breach(self):
+        if "Primeval Titan" not in self.hand:
+            return GameStates()
+        else:
+            return self.clone(done=True)
 
     def cast_uro_titan_of_natures_wrath(self):
         state = self.draw(1)

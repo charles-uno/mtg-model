@@ -6,7 +6,7 @@ import yaml
 from . import state, output, helpers
 
 
-def simulate(name, trial=0, max_turns=4):
+def simulate(name, trial=0, max_turns=3):
     # Keep track of the initial game state. If we fail to converge, this
     # is what we'll return so we know if we were on the play or draw.
     starttime = time.time()
@@ -25,7 +25,7 @@ def simulate(name, trial=0, max_turns=4):
     gs = gs0.pass_turn()
     try:
         for turn in range(1, max_turns+1):
-            gs = gs.next_turn(max_turns=max_turns)
+            gs = gs.next_turn(max_turns=max_turns+1)
             # Internally, we keep track of whether or not this titan can have
             # haste. But if we want to store that data, we'll need to come back
             # and re-finagle the data structure.

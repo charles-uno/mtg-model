@@ -9,8 +9,7 @@ import sys
 
 import mtg
 
-def main():
-    args = parse_args()
+def main(args):
     # If reporting results, do so.
     if args.results:
         return mtg.print_results(args.decks)
@@ -25,7 +24,7 @@ def main():
                 trial += 1
                 name = random.choice(args.decks)
                 jobs.append(
-                    pool.apply_async(mtg.simulate, (name, trial, 3))
+                    pool.apply_async(mtg.simulate, (name, trial, args.turns))
                 )
             results = [x.get() for x in jobs]
             if any(results) and args.debug:
@@ -39,7 +38,7 @@ def main():
         else:
             trial += 1
             name = random.choice(args.decks)
-            result = mtg.simulate(name, trial, 3)
+            result = mtg.simulate(name, trial, args.turns)
             if result and args.debug:
                 print(result)
                 return
@@ -86,6 +85,13 @@ def parse_args():
         action="store_true",
         help="Instead of running simulations, print the results for the given decks",
     )
+    parser.add_argument(
+        "--turns",
+        "-t",
+        type=int,
+        help="Maximum number of turns to simulate (default: 3)",
+        default=3,
+    )
     return parser.parse_args()
 
 
@@ -100,10 +106,11 @@ class SilenceStderr(object):
 
 
 if __name__ == "__main__":
+    args = parse_args()
     # Suppress the multiprocess pool yelling about KeyboardInterrupt
     with SilenceStderr():
         try:
-            main()
+            main(args)
         except KeyboardInterrupt:
             print("Killed")
             sys.exit(1)
